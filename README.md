@@ -45,7 +45,7 @@ for k=1:t_end/Delta_t
     IEKF(diag_Sigma_discr, diag_Sigma_z, diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x);
 end
 ```
-### Filter iteration datalogging
+### Filter iteration with datalogging
 ```
 ...
 fid=fopen('sol.dat','w'); % Sets file for datalogging
@@ -105,6 +105,29 @@ clear *_series
 
 rank(OB)
 ```
+
+### Determine LogLikelihood of the filter prediction series.
+```
+logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)
+
+```
+
+### Identify filter parameters
+```
+theta_=[diag_Sigma_discr;diag_Sigma_z;diag_Sigma_u;mu_x_0;diag_Sigma_x_0]; % set the vector of to-be-identified parameters
+fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),diag_Sigma_w_x,diag_Sigma_v_x,theta_(5:6),theta_(7:8));
+options = optimset('PlotFcns',@optimplotfval);
+theta_ = fminsearch(fun, theta_,options);
+
+% untangle the parameters
+diag_Sigma_discr=theta_(1:2)
+diag_Sigma_z=theta_(3)
+diag_Sigma_u=theta_(4)
+mu_x_0=theta_(5:6)
+diag_Sigma_x_0=theta_(7:8)
+
+```
+
 
 ## The example (mass spring damper)
 The standard mass spring damper:
