@@ -162,3 +162,4 @@ z=ddx(x,dx)
 ![Problem description](https://github.com/jabierros/Mass-Spring-Damper-IEKF/blob/main/mass_spring_damper.png)
 
 
+Refs: help to mathml rendering in github https://jsfiddle.net/8ndx694g/
