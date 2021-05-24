@@ -2,12 +2,10 @@ clear all
 close all
 
 global t t_0 t_end Delta_t
-global mu_x Sigma2_x
-global u_meas z_meas           
-global seed Sigma_z_actual Sigma_u_actual x_actual x_actual_0 u_actual_func % for 'reality' simulation
+global mu_x Sigma2_x n_x
+global u_meas z_meas n_u n_z          
+global Sigma_z_actual Sigma_u_actual x_actual x_actual_0 u_actual_func seed % for 'reality' simulation
 global param % model and sensor equation parameters (defined in main_symbolic_EKF.m)
-
-
 
 % Define actual handle to function determining the input
 u_actual_func = @(t) my_u_actual_func(t);
@@ -69,11 +67,11 @@ Sigma_v_x=diag([sigma_v_x_1])
 
 % Parameters for sensor noise 
 %Assuming error in observation equation is sensor error
-sigma_accx=0.1;
+sigma_accx_actual=0.1;
 %Sensor error and sensor error siven in spec. sheet are equal.
-sigma_accx_spec=sigma_accx;
+sigma_accx_spec=sigma_accx_actual;
 
-Sigma_z_actual=diag([sigma_accx]);
+Sigma_z_actual=diag([sigma_accx_actual]);
 Sigma_z_spec=diag([sigma_accx_spec]);
 
 seed=1789;
@@ -82,6 +80,10 @@ t=t_0;
 x_actual=x_actual_0
 mu_x=mu_x_0;
 Sigma2_x = diag(diag_Sigma_x_0.^2);
+
+n_x=size(x_actual_0,1);
+n_u=size(Sigma_u_actual,1);
+n_z=size(Sigma_z_actual,1);
 
 %% Kalman Filter Loop
 %Starting simulation time and length
@@ -93,7 +95,6 @@ diag_Sigma_z=diag(Sigma_z_spec)
 diag_Sigma_u=diag(Sigma_u_spec)
 diag_Sigma_w_x=diag(Sigma_w_x)
 diag_Sigma_v_x=diag(Sigma_v_x)
-
 
 %% Maximum Likelihood theta_=[diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u] determination
 use_previously_found_ML_params=false
@@ -120,9 +121,9 @@ fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),mu_x_0,diag_Sigma_x_0)
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_,options);
 
-diag_Sigma_discr=theta_(1:2);
-diag_Sigma_z=theta_(3);
-diag_Sigma_u=theta_(4);
+diag_Sigma_discr=theta_(1:n_x)
+diag_Sigma_z=theta_(n_x+1:n_x+n_z)
+diag_Sigma_u=theta_(n_x+n_z+1:n_x+n_z+n_u)
 end
 
 %% Maximum Likelihood theta_=[diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,mu_x_0,diag_Sigma_x_0] determination
@@ -147,11 +148,11 @@ if use_previously_found_ML_params
 %    0.000090138261416
 %    3.231152009862333
 
-    diag_Sigma_discr=theta_(1:2)
-    diag_Sigma_z=theta_(3)
-    diag_Sigma_u=theta_(4)
-    mu_x_0=theta_(5:6)
-    diag_Sigma_x_0=theta_(7:8)
+    diag_Sigma_discr=theta_(1:n_x)
+    diag_Sigma_z=theta_(n_x+1:n_x+n_z)
+    diag_Sigma_u=theta_(n_x+n_z+1:n_x+n_z+n_u)
+    mu_x_0=theta_(n_x+n_z+n_u+1:n_x+n_z+n_u+n_x)
+    diag_Sigma_x_0=theta_(n_x+n_z+n_u+n_x+1:n_x+n_z+n_u+n_x+n_x)
     logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)
 end
 
@@ -164,11 +165,11 @@ fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),diag_Sigma_w_x,diag_Si
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_,options);
 
-diag_Sigma_discr=theta_(1:2)
-diag_Sigma_z=theta_(3)
-diag_Sigma_u=theta_(4)
-mu_x_0=theta_(5:6)
-diag_Sigma_x_0=theta_(7:8)
+    diag_Sigma_discr=theta_(1:n_x)
+    diag_Sigma_z=theta_(n_x+1:n_x+n_z)
+    diag_Sigma_u=theta_(n_x+n_z+1:n_x+n_z+n_u)
+    mu_x_0=theta_(n_x+n_z+n_u+1:n_x+n_z+n_u+n_x)
+    diag_Sigma_x_0=theta_(n_x+n_z+n_u+n_x+1:n_x+n_z+n_u+n_x+n_x)
 end
 
 %% Run filter for t_0:t_end while Datalog Datalogging
@@ -185,7 +186,7 @@ rng(seed); u_meas=get_u(); z_meas=get_z();
 fid=fopen('sol.dat','w');
 
 % Set variables for dataloging
-datalogging_string={'t';'x_actual';'mu_x';'u_actual';'u_meas';'z_actual';'z_meas';'diag_Sigma_x';'mu_x_error'};
+datalogging_string={'t';'x_actual';'mu_x';'u_actual';'u_meas';'z_actual';'z_meas';'diag_Sigma_x'};
 
 % Datalog k=0 %Requires restarting seed
 datalogging(fid, datalogging_string);
@@ -196,7 +197,6 @@ for k=1:t_end/Delta_t
     
     % Datalog k+1
     datalogging(fid, datalogging_string)
-
 end
 
 fclose(fid);
@@ -229,6 +229,8 @@ clear *_series
 
 %% Real filter error statistics @ lim k -> infty
 load_datalogging('sol.dat', datalogging_string)
+
+mu_x_error_series=mu_x_series-x_actual_series;
 
 lim_mu_x_error=mu_x_error_series(end-100:end,:);
 lim_mu_x_error_mean=mean(lim_mu_x_error)
@@ -314,6 +316,7 @@ global param
     mu_x_pred=f(mu_x,u_meas,t,param);
     Sigma2_x_pred=f_x_*Sigma2_x*f_x_'+Q;
     I_pred=inv(Sigma2_x_pred);
+    i_pred=I_pred*mu_x_pred;
     
     % Read Input and Sensor (k+1)
     t_prev=t;
@@ -335,13 +338,13 @@ global param
     R=R_z+R_u+R_v_x;
     
     h_x_=h_x(mu_x_pred,u_meas,t,param);
-    mu_x_proj=+pinv(h_x_)*(z_meas-(h(mu_x_pred,u_meas,t,param)-h_x_*mu_x_pred));
-    Sigma2_x_proj=pinv(h_x_)*R*pinv(h_x_');
-    I_corr=pinv(Sigma2_x_proj);
+    i_proj=h_x_'*inv(R)*(z_meas-(h(mu_x_pred,u_meas,t,param)-h_x_*mu_x_pred));
+    I_proj=h_x_'*inv(R)*h_x_;
     
     % Fussion / Information Weighted Average
-    I=I_pred+I_corr;
-    mu_x=inv(I)*(I_pred*mu_x_pred+I_corr*mu_x_proj);
+    I=I_pred+I_proj;
+    %mu_x=inv(I)*(I_pred*mu_x_pred+I_proj*mu_x_proj);
+    mu_x=inv(I)*(i_pred+i_proj);
     Sigma2_x=inv(I);
     
     %%---End--- One step of Kalman filter (k-th)
@@ -403,10 +406,9 @@ end
 %%
 function datalogging(fid, datalogging_string)
 % Datalogged variables
-global t u_meas u_actual z_meas z_actual x_actual mu_x Sigma2_x diag_Sigma_x mu_x_error  
+global t u_meas u_actual z_meas z_actual x_actual mu_x Sigma2_x diag_Sigma_x
 
 diag_Sigma_x=diag(Sigma2_x).^0.5;
-mu_x_error=mu_x-x_actual;
 
 for i=1:size(datalogging_string,1)
     var=eval(datalogging_string{i});
@@ -420,7 +422,7 @@ end
 %%
 function load_datalogging(sol, datalogging_string)
 % Datalogged variables
-global t u_meas u_actual z_meas z_actual x_actual mu_x Sigma2_x diag_Sigma_x mu_x_error  
+global t u_meas u_actual z_meas z_actual x_actual mu_x Sigma2_x diag_Sigma_x 
 
 load(sol,'-ascii')
 
@@ -452,6 +454,10 @@ set(groot, 'defaultLegendInterpreter','latex');
 
 load_datalogging('sol.dat', datalogging_string);
 
+mu_x_error_series=mu_x_series-x_actual_series;
+
+figIdx=1;
+fig=figure(figIdx);
 set(groot, 'defaultAxesTickLabelInterpreter','latex');
 set(groot, 'defaultLegendInterpreter','latex');
 figure
@@ -464,7 +470,8 @@ figname='trajectory';
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
-figure
+figIdx = figIdx + 1;
+fig=figure(figIdx);
 x_series_Euler=[];
 x_=x_actual_0;
 for k=1:length(t_series)
@@ -481,7 +488,8 @@ figname='trajectory_Euler';
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
-figure
+figIdx = figIdx + 1;
+fig=figure(figIdx);
 plot(t_series,u_actual_series,t_series,u_meas_series);
 legH=legend('$\mathrm{meas}(f^{ext})$', '$f^{ext}$');
 set(legH,'interpreter','latex');
@@ -491,7 +499,8 @@ figname='u';
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
-figure
+figIdx = figIdx + 1;
+fig=figure(figIdx);
 plot(t_series,z_actual_series,'-',t_series,z_meas_series,'--');
 legH=legend('$\mathrm{meas}(\ddot{x})$','$\ddot{x}$');
 set(legH,'interpreter','latex');
@@ -501,7 +510,8 @@ figname='z_meas_z_without';
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
-figure
+figIdx = figIdx + 1;
+fig=figure(figIdx);
 plot(t_series,z_meas_series-z_actual_series,'-');
 legH=legend('$\mathrm{meas}(\ddot{x})-\ddot{x}$');
 set(legH,'interpreter','latex');
@@ -511,7 +521,8 @@ figname='z_meas_minus_z_without';
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
-figure
+figIdx = figIdx + 1;
+fig=figure(figIdx);
 plot(t_series,x_actual_series,'-',t_series,mu_x_series,'--');
 xlim([0 t_end]);
 ylim([-6 6]);
@@ -523,7 +534,8 @@ figname='mu_actual';
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
-figure
+figIdx = figIdx + 1;
+fig=figure(figIdx);
 plot(t_series,mu_x_series-x_actual_series,'-');
 xlim([0 t_end]);
 ylim([-1 1]);
@@ -541,7 +553,8 @@ lim_mu_x_error_mean=mean(lim_mu_x_error);
 lim_mu_x_error_std=std(lim_mu_x_error);
 sqrt_lim_mu_x_error_squared_mean=mean((lim_mu_x_error).^2).^0.5;
 
-figure
+figIdx = figIdx + 1;
+fig=figure(figIdx);
 semilogy(t_series,diag_Sigma_x_series,'-',t_series,ones(size(diag_Sigma_x_series,1),1)*sqrt_lim_mu_x_error_squared_mean,'--');
 legH=legend('$\sigma_{x}$','$\sigma_{\dot{x}}$','${\mathrm{mean}((\hat{\mu}_{x}-{x})^2)^{\frac{1}{2}}}$','${\mathrm{mean}((\hat{\mu}_{\dot{x}}-\dot{x})^2)^{\frac{1}{2}}}$');
 set(legH,'interpreter','latex');
