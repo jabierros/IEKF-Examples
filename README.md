@@ -1,4 +1,4 @@
-# Mass Spring Damper IEKF
+# IEKF Examples
 
 This is an example of a, pretty general, **MATLAB** implemementation of the Information Extended Kalman Filter.
 Maximum Likelihood Estimation of filter parameters is considered.
