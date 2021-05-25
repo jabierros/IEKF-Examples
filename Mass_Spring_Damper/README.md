@@ -11,7 +11,7 @@ z=ddx(x,dx)
 
 <img src="https://render.githubusercontent.com/render/math?math=z%3D%20%5Cddot%7Bx%7D(x%2C%5Cdot%7Bx%7D)">
 
-![Problem description](https://github.com/jabierros/Mass-Spring-Damper-IEKF/blob/main/mass_spring_damper.png)
+![Problem description](https://github.com/jabierros/IEKF-Examples/blob/main/Mass_Spring_Damper/mass_spring_damper.png)
 
 
-Refs: help to mathml rendering in github https://jsfiddle.net/8ndx694g/
+Refs: help to MathML rendering in github https://jsfiddle.net/8ndx694g/
