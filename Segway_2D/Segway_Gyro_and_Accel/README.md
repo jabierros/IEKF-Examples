@@ -2,7 +2,7 @@
 
 
 Figure depicts the system. `main_symbolic_EKF.m` defines the dynamic equations, and exports required functions
-`main_snumeric_Information_EKF.m` runs the filter and estimates filter parameters
+`main_numeric_Information_EKF.m` runs the filter and estimates filter parameters
 
 x_=[q,dq]
 dx_/dt=f(x_)=[dq;ddq(q,dq)]
