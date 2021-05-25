@@ -107,13 +107,13 @@ clear *_series
 rank(OB)
 ```
 
-### Determine LogLikelihood of the filter prediction series.
+### Determine -LogLikelihood of the filter prediction series.
 ```
 logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)
 
 ```
 
-### Determine LogLikelihood of the filter prediction series.
+### Find parameters `theta_`that minimize -LogLikelihood of the filter prediction series.
 
 ```
 theta_=[diag_Sigma_discr;diag_Sigma_z;diag_Sigma_u;mu_x_0;diag_Sigma_x_0]; % define parameters to be identified
