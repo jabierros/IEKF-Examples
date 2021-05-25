@@ -7,6 +7,8 @@ q=[x]'
 dq=[dx]'
 ddq=[ddx]'
 
+param=[m k x0 c Delta_t]'
+
 iF=-m*[ddx,0,0]' %xyz
 
 sdF=[-k*(x-x0),0,0]'+[-c*dx,0,0]' %xyz
@@ -37,14 +39,17 @@ ddq_aux=simplify(ddq_aux)
 x_=[q;dq]
 u=sym([f_ext])
 
-w_x=[w_x_1]
-
-v_x=[v_x_1]
+% In this example we are not using noise source w_x_1, but we need it to
+% make a general export of funtions that allows for w_x, matlabFunction
+% does not allows funtion variable to be empty.
+w_x=[w_x_1];
+v_x=[v_x_1];
 
 dstate=[dq;ddq_aux]; dstate=simplify(dstate)
 
 dstate_noisy=dstate; dstate_noisy=simplify(dstate_noisy)
 dstate=subs(dstate,w_x,[0]); dstate=simplify(dstate)
+dstate_x=jacobian(dstate);
 
 f=x_+dstate_noisy*Delta_t; f=simplify(f) %x_k+1=f(x_k)
 
@@ -71,31 +76,28 @@ h_x=jacobian(h,x_); h_x=simplify(h_x)
 
 h_u=jacobian(h,u); h_u=simplify(h_u)
 
-param=[m k x0 c Delta_t]'
-
 matlabFunction(f,'file','f','vars',{x_ u t param});
 
 matlabFunction(f_noisy,'file','f_noisy','vars',{x_ u t param w_x});
-
-matlabFunction(f_w_x,'file','f_w_x','vars',{x_ u t param});
 
 matlabFunction(f_x,'file','f_x','vars',{x_ u t param});
 
 matlabFunction(f_u,'file','f_u','vars',{x_ u t param});
 
+matlabFunction(f_w_x,'file','f_w_x','vars',{x_ u t param});
+
 matlabFunction(h,'file','h','vars',{x_ u t param});
 
 matlabFunction(h_noisy,'file','h_noisy','vars',{x_ u t param v_x});
-
-matlabFunction(h_v_x,'file','h_v_x','vars',{x_ u t param});
 
 matlabFunction(h_x,'file','h_x','vars',{x_ u t param});
 
 matlabFunction(h_u,'file','h_u','vars',{x_ u t param});
 
+matlabFunction(h_v_x,'file','h_v_x','vars',{x_ u t param});
+
 matlabFunction(dstate,'file','dstate','vars',{x_ u t param});
 
 matlabFunction(dstate_noisy,'file','dstate_noisy','vars',{x_ u t param w_x});
 
-ddstate=jacobian(dstate,x_)*subs(dstate,w_x,[0]); ddstate=simplify(ddstate);
-matlabFunction(ddstate,'file','ddstate','vars',{x_ u t param});
+matlabFunction(dstate_x,'file','dstate_x','vars',{x_ u t param});

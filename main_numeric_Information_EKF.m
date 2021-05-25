@@ -21,13 +21,13 @@ c=0.1        %Kg/s
 
 Delta_t=0.01 %s
 
-param=[m k rho0 c Delta_t]' % as is form main_symbolic_EKF.m
-%%---Edit_Begin
+param=[m k rho0 c Delta_t]' % as is from main_symbolic_EKF.m
+%%---Edit_End
 
 % Set Initial time
 %%---Edit_Begin
 t_0=0;       %s
-%%---Edit_Begin
+%%---Edit_End
 
 % Actual initial state x_actual_0
 %%---Edit_Begin
@@ -38,13 +38,13 @@ q_0=[x_0]'
 dq_0=[dx_0]'
 
 x_actual_0=[q_0;dq_0]
-%%---Edit_Begin
+%%---Edit_End
 
 %Initial mu_x covariance (assumed diagonal)
 %%---Edit_Begin
-delta_x0=0.5  % m no idea at all
-delta_dx0=delta_x0*sqrt(k/m) % m/s no idea at all
-diag_Sigma_x_0= [delta_x0,delta_dx0]';
+sigma_x0=0.5  % m no idea at all
+sigma_dx0=sigma_x0*sqrt(k/m) % m/s no idea at all
+diag_Sigma_x_0= [sigma_x0,sigma_dx0]';
 %%---Edit_End
 
 % Initial mu_x
@@ -52,29 +52,46 @@ diag_Sigma_x_0= [delta_x0,delta_dx0]';
 mu_x_0 = x_actual_0+diag_Sigma_x_0; % you can leave it as is
 %%---Edit_End
 
-% Parameters for input noise and other noise sources
+% Parameters for input measurement noise
+%%---Edit_Begin
 sigma_f_ext_actual=0.01;   %actual std of the sensor meassuring f_ext, bias assumed 0
 sigma_f_ext_spec=sigma_f_ext_actual; %actual std of the sensor meassuring f_ext, bias assumed 0
 Sigma_u_actual=diag([sigma_f_ext_actual])
-Sigma_u_spec=diag([sigma_f_ext_spec])
+diag_Sigma_u=[sigma_f_ext_spec]; %input meas. cov. assumed diagonal
+%%---Edit_End
 
-% Noise Source w_x Covariance Matrix
+% Parameters for process discretization noise
+%%---Edit_Begin
+max_error_discr=[0.001,0.00439535];
+diag_Sigma_discr=max_error_discr; %discr. err. cov. assumed diagonal
+%%---Edit_End
+
+% Parameters for other noise sources in process quation w_x
+%%---Edit_Begin
 sigma_w_x_1=0;
-Sigma_w_x=diag([sigma_w_x_1])
+diag_Sigma_w_x=[sigma_w_x_1]; %other proccess noise cov. assumed diagonal
+%%---Edit_End
 
+% Parameters for other noise sources in process quation v_x
+%%---Edit_Begin
 sigma_v_x_1=0;
-Sigma_v_x=diag([sigma_v_x_1])
+diag_Sigma_v_x=[sigma_v_x_1]; %other proccess  noise cov. assumed diagonal
+%%---Edit_End
 
-% Parameters for sensor noise 
-%Assuming error in observation equation is sensor error
+% Parameters for sensor measurement noise
+%%---Edit_Begin
 sigma_accx_actual=0.1;
 %Sensor error and sensor error siven in spec. sheet are equal.
 sigma_accx_spec=sigma_accx_actual;
 
 Sigma_z_actual=diag([sigma_accx_actual]);
-Sigma_z_spec=diag([sigma_accx_spec]);
+diag_Sigma_z=[sigma_accx_spec]; %sensor measurement error assumed diagonal
+%%---Edit_End
 
+% Choose random number generator seed
+%%---Edit_Begin
 seed=1789;
+%%---Edit_End
 
 t=t_0;
 x_actual=x_actual_0
@@ -87,29 +104,20 @@ n_z=size(Sigma_z_actual,1);
 
 %% Kalman Filter Loop
 %Starting simulation time and length
+%%---Edit_Begin
 t_0=0;
 t_end=50;
-
-diag_Sigma_discr=([1/2*1,1/2*1])'
-diag_Sigma_z=diag(Sigma_z_spec)
-diag_Sigma_u=diag(Sigma_u_spec)
-diag_Sigma_w_x=diag(Sigma_w_x)
-diag_Sigma_v_x=diag(Sigma_v_x)
+%%---Edit_End
 
 %% Maximum Likelihood theta_=[diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u] determination
 use_previously_found_ML_params=false
 if use_previously_found_ML_params
-    theta_ =[19.957691456003325
-        7.240187142211141
-        0.093495231579440
-        0.005939902115621];
-%     theta_ =1.0e+02 *[ 0.000000100720375
-%    1.357590468678988
-%    0.000977342128211
-%   0.000154740105587];
-    diag_Sigma_discr=theta_(1:2)
-    diag_Sigma_z=theta_(3)
-    diag_Sigma_u=theta_(4)
+%%---Edit_Begin
+    theta_ =[19.957691456003325e-4, 7.240187142211141e-4, 0.093495231579440, 0.005939902115621];
+%%---Edit_End
+    diag_Sigma_discr=theta_(1:n_x)
+    diag_Sigma_z=theta_(n_x+1:n_x+n_z)
+    diag_Sigma_u=theta_(n_x+n_z+1:n_x+n_z+n_u)
     logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)
 end
 
@@ -129,25 +137,9 @@ end
 %% Maximum Likelihood theta_=[diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,mu_x_0,diag_Sigma_x_0] determination
 use_previously_found_ML_params=true;
 if use_previously_found_ML_params
-    theta_ =1.0e+02 *[   0.000001830224861
-        1.334642513215480
-        0.000913294982475
-        0.000380941571911
-        0.020000027551784
-        -0.000836123483162
-        0.000000054530327
-        0.000000348279808]
-%     theta_ =
-% 
-%   19.860210956956706
-%   11.362172821110534
-%    0.093466208803662
-%    0.006289452578208
-%    1.993059826508269
-%    2.207848074323950
-%    0.000090138261416
-%    3.231152009862333
-
+%%---Edit_Begin
+    theta_ =1.0e+02 *[   0.000001830224861e-4, 1.334642513215480e-4, 0.000913294982475, 0.000380941571911, 0.020000027551784, -0.000836123483162, 0.000000054530327, 0.000000348279808]'
+%%---Edit_End
     diag_Sigma_discr=theta_(1:n_x)
     diag_Sigma_z=theta_(n_x+1:n_x+n_z)
     diag_Sigma_u=theta_(n_x+n_z+1:n_x+n_z+n_u)
@@ -161,7 +153,7 @@ ML_find_params=true
 if ML_find_params
 theta_=[diag_Sigma_discr;diag_Sigma_z;diag_Sigma_u;mu_x_0;diag_Sigma_x_0];
 % function parameters: logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)
-fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),diag_Sigma_w_x,diag_Sigma_v_x,theta_(5:6),theta_(7:8));
+fun = @(theta_) logL_IEKF(theta_(1:n_x),theta_(n_x+1:n_x+n_z),theta_(n_x+n_z+1:n_x+n_z+n_u),diag_Sigma_w_x,diag_Sigma_v_x,theta_(n_x+n_z+n_u+1:n_x+n_z+n_u+n_x),theta_(n_x+n_z+n_u+n_x+1:n_x+n_z+n_u+n_x+n_x));
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_,options);
 
@@ -232,7 +224,9 @@ load_datalogging('sol.dat', datalogging_string)
 
 mu_x_error_series=mu_x_series-x_actual_series;
 
-lim_mu_x_error=mu_x_error_series(end-100:end,:);
+num_samples_statistic=100;
+
+lim_mu_x_error=mu_x_error_series(end-num_samples_statistic:end,:);
 lim_mu_x_error_mean=mean(lim_mu_x_error)
 lim_mu_x_error_std=std(lim_mu_x_error)
 sqrt_lim_mu_x_error_squared_mean=mean((lim_mu_x_error).^2).^0.5
@@ -246,10 +240,14 @@ if ML_find_params || use_previously_found_ML_params
 else
     fig_dir=['Information_EKF_',num2str(Delta_t)];
 end
-
+close all
 Plotting(fig_dir, datalogging_string)
 
 %% Helper functions
+%%
+function u_actual=my_u_actual_func(t)
+u_actual=0.*t;
+end
 
 %%
 function logL=logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)
@@ -305,8 +303,7 @@ global param
     Q_w_x= f_w_x_*diag(diag_Sigma_w_x.^2)*f_w_x_';
     
     % Discretization error effect on model covariance
-    % (assuming that is second order in time)
-    Q_discr=diag((diag_Sigma_discr*Delta_t^2).^2);
+    Q_discr=diag((diag_Sigma_discr).^2);
     
     % Error sources are assumed independent
     Q = Q_discr+Q_u+Q_w_x;
@@ -367,7 +364,7 @@ elseif t==t_prev
 elseif t>t_prev
     %True system state is generated by integration using MATLAB ode45 integrator
     ode45_options=odeset('RelTol',1e-12,'AbsTol',1e-12);
-    [time_steps,x_steps] = ode45(@(t,x_) dstate(x_, u_actual_func(t_prev), t,param),[t_prev,t],x_actual_prev,ode45_options);
+    [time_steps,x_steps] = ode45(@(t,x_) dstate(x_, u_actual_func(t_prev), t_prev,param),[t_prev,t],x_actual_prev,ode45_options);
     x_actual=x_steps(end,:)';
     x_actual_prev=x_actual;
     t_prev=t;
@@ -436,11 +433,6 @@ end
 clear sol
 end
 
-%%
-function u_actual=my_u_actual_func(t)
-u_actual=0.*t;
-end
-
 %% Plotting
 function Plotting(fig_dir, datalogging_string)
 global t_end
@@ -452,117 +444,190 @@ global param
 set(groot, 'defaultAxesTickLabelInterpreter','latex');
 set(groot, 'defaultLegendInterpreter','latex');
 
+fontsize=12
+
 load_datalogging('sol.dat', datalogging_string);
 
 mu_x_error_series=mu_x_series-x_actual_series;
 
 figIdx=1;
+
 fig=figure(figIdx);
-set(groot, 'defaultAxesTickLabelInterpreter','latex');
-set(groot, 'defaultLegendInterpreter','latex');
-figure
+figname='x_actual';
 plot(t_series,x_actual_series);
+set(gca, 'YScale', 'linear');
 legH=legend('${x}$','$\dot{x}$');
-set(legH,'interpreter','latex');
-titH=title('$\mathbf{x}$ (precise integration)');
-set(titH,'interpreter','latex');
-figname='trajectory';
+titH=title('$\mathbf{x}$ (Actual State)');
+set(fig,'units','normalized');
+set(legH,'interpreter','latex','Fontsize',fontsize);
+set(titH,'interpreter','latex','Fontsize',fontsize);
+set(fig.CurrentAxes,'FontSize',fontsize)
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
-figIdx = figIdx + 1;
-fig=figure(figIdx);
-x_series_Euler=[];
+x_discr_series=[];
 x_=x_actual_0;
 for k=1:length(t_series)
- x_series_Euler=[x_series_Euler,x_];
+ x_discr_series=[x_discr_series,x_];
  x_=f(x_, u_actual_series(k,:)', t_series(k),param);
 end
-plot(t_series,x_series_Euler);
 
+figIdx = figIdx + 1;
+fig=figure(figIdx);
+figname='x_discr';
+plot(t_series,x_discr_series);
+set(gca, 'YScale', 'linear');
 legH=legend('${x}$','$\dot{x}$');
-set(legH,'interpreter','latex');
-titH=title('$\mathbf{x}$ (Euler integrator)');
-set(titH,'interpreter','latex');
-figname='trajectory_Euler';
+titH=title('$\mathbf{x}$ (integrated with discr.)');
+set(fig,'units','normalized'); 
+set(legH,'interpreter','latex','Fontsize',fontsize);
+set(titH,'interpreter','latex','Fontsize',fontsize);
+set(fig.CurrentAxes,'FontSize',fontsize);
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
 figIdx = figIdx + 1;
 fig=figure(figIdx);
-plot(t_series,u_actual_series,t_series,u_meas_series);
+figname='u_meas_u_actual';
+plot(t_series,u_meas_series,'-',t_series,u_actual_series,'--');
+set(gca, 'YScale', 'linear');
 legH=legend('$\mathrm{meas}(f^{ext})$', '$f^{ext}$');
-set(legH,'interpreter','latex');
 titH=title('$\mathrm{meas}(\mathbf{u})$ vs $\mathbf{u}$ ');
-set(titH,'interpreter','latex');
-figname='u';
+set(fig,'units','normalized'); 
+set(legH,'interpreter','latex','Fontsize',fontsize);
+set(titH,'interpreter','latex','Fontsize',fontsize);
+set(fig.CurrentAxes,'FontSize',fontsize);
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
 figIdx = figIdx + 1;
 fig=figure(figIdx);
-plot(t_series,z_actual_series,'-',t_series,z_meas_series,'--');
-legH=legend('$\mathrm{meas}(\ddot{x})$','$\ddot{x}$');
-set(legH,'interpreter','latex');
-titH=title('$\mathrm{meas}(\mathbf{z})$ vs $\mathbf{z}$');
-set(titH,'interpreter','latex');
-figname='z_meas_z_without';
-set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
-system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
-
-figIdx = figIdx + 1;
-fig=figure(figIdx);
-plot(t_series,z_meas_series-z_actual_series,'-');
-legH=legend('$\mathrm{meas}(\ddot{x})-\ddot{x}$');
-set(legH,'interpreter','latex');
+figname='u_meas_minus_u_actual';
+plot(t_series,u_meas_series-u_actual_series,'-');
+set(gca, 'YScale', 'linear');
+legH=legend('$\mathrm{meas}(f^{ext})-f^{ext}$')
 titH=title('$\mathrm{meas}(\mathbf{z})-\mathbf{z}$');
-set(titH,'interpreter','latex');
-figname='z_meas_minus_z_without';
+set(fig,'units','normalized'); 
+set(legH,'interpreter','latex','Fontsize',fontsize);
+set(titH,'interpreter','latex','Fontsize',fontsize);
+set(fig.CurrentAxes,'FontSize',fontsize);
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
 figIdx = figIdx + 1;
 fig=figure(figIdx);
-plot(t_series,x_actual_series,'-',t_series,mu_x_series,'--');
+figname='z_meas_z_actual';
+plot(t_series,z_meas_series,'-',t_series,z_actual_series,'--');
+set(gca, 'YScale', 'linear');
+legH=legend('$\mathrm{meas}(\ddot{x})$','$\ddot{x}$');
+titH=title('$\mathrm{meas}(\mathbf{z})$ vs $\mathbf{z}$');
+set(fig,'units','normalized'); 
+set(legH,'interpreter','latex','Fontsize',fontsize);
+set(titH,'interpreter','latex','Fontsize',fontsize);
+set(fig.CurrentAxes,'FontSize',fontsize);
+set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
+system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
+
+figIdx = figIdx + 1;
+fig=figure(figIdx);
+figname='z_meas_minus_z_actual';
+plot(t_series,z_meas_series-z_actual_series,'-');
+set(gca, 'YScale', 'linear');
+legH=legend('$\mathrm{meas}(\ddot{x})-\ddot{x}$');
+titH=title('$\mathrm{meas}(\mathbf{z})-\mathbf{z}$');
+set(fig,'units','normalized'); 
+set(legH,'interpreter','latex','Fontsize',fontsize);
+set(titH,'interpreter','latex','Fontsize',fontsize);
+set(fig.CurrentAxes,'FontSize',fontsize);
+set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
+system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
+
+figIdx = figIdx + 1;
+fig=figure(figIdx);
+figname='mu_x_x_actual';
+plot(t_series,mu_x_series,'-',t_series,x_actual_series,'--');
+set(gca, 'YScale', 'linear');
 xlim([0 t_end]);
 ylim([-6 6]);
-legH= legend('$x$','$\dot{x}$','$\hat{\mu}_x$','$\hat{\mu}_{\dot{x}}$');
-set(legH,'interpreter','latex');
+legH= legend('$\hat{\mu}_x$','$\hat{\mu}_{\dot{x}}$','$x$','$\dot{x}$');
 titH=title('$\mathbf{x}$ vs $\hat{{\mu}}_{\mathbf{x}}$');
-set(titH,'interpreter','latex');
-figname='mu_actual';
+set(fig,'units','normalized'); 
+set(legH,'interpreter','latex','Fontsize',fontsize);
+set(titH,'interpreter','latex','Fontsize',fontsize);
+set(fig.CurrentAxes,'FontSize',fontsize);
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
 figIdx = figIdx + 1;
 fig=figure(figIdx);
+set(fig,'units','normalized'); 
 plot(t_series,mu_x_series-x_actual_series,'-');
+set(gca, 'YScale', 'linear');
 xlim([0 t_end]);
 ylim([-1 1]);
 legH= legend('$\hat{\mu}_{x}-{x}$','$\hat{\mu}_{\dot{x}}-\dot{x}$');
-set(legH,'interpreter','latex');
+set(legH,'interpreter','latex','Fontsize',fontsize);
 titH=title('$\hat{\mu}_{\mathbf{x}}-\mathbf{x}$');
-set(titH,'interpreter','latex');
-figname='Error_mu_minus_actual';
+set(titH,'interpreter','latex','Fontsize',fontsize);
+set(fig.CurrentAxes,'FontSize',fontsize);
+figname='mu_x_minus_x_actual';
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
 % Real filter error statistics @ lim k -> infty
-lim_mu_x_error=mu_x_error_series(end-100:end,:);
+num_samples_statistic=100;
+
+lim_mu_x_error=mu_x_error_series(end-num_samples_statistic:end,:);;
 lim_mu_x_error_mean=mean(lim_mu_x_error);
 lim_mu_x_error_std=std(lim_mu_x_error);
 sqrt_lim_mu_x_error_squared_mean=mean((lim_mu_x_error).^2).^0.5;
 
 figIdx = figIdx + 1;
 fig=figure(figIdx);
-semilogy(t_series,diag_Sigma_x_series,'-',t_series,ones(size(diag_Sigma_x_series,1),1)*sqrt_lim_mu_x_error_squared_mean,'--');
-legH=legend('$\sigma_{x}$','$\sigma_{\dot{x}}$','${\mathrm{mean}((\hat{\mu}_{x}-{x})^2)^{\frac{1}{2}}}$','${\mathrm{mean}((\hat{\mu}_{\dot{x}}-\dot{x})^2)^{\frac{1}{2}}}$');
-set(legH,'interpreter','latex');
-titH=title('$\mathrm{diag}({{\Sigma}}^2_{\mathbf{x}})^{\frac{1}{2}}$');
-set(titH,'interpreter','latex');
+figname='sigma_x';
+plot(t_series,diag_Sigma_x_series,'-',t_series,ones(size(diag_Sigma_x_series,1),1)*sqrt_lim_mu_x_error_squared_mean,'--');
+set(gca, 'YScale', 'log');
 yl = ylim;
 ylim([1e-3,yl(2)]);
-figname='sigma_x';
+legH=legend('$\sigma_{x}$','$\sigma_{\dot{x}}$','${\mathrm{mean}((\hat{\mu}_{x}-{x})^2)^{\frac{1}{2}}}$','${\mathrm{mean}((\hat{\mu}_{\dot{x}}-\dot{x})^2)^{\frac{1}{2}}}$');
+titH=title('$\mathrm{diag}({{\Sigma}}^2_{\mathbf{x}})^{\frac{1}{2}}$');
+set(fig,'units','normalized'); 
+set(legH,'interpreter','latex','Fontsize',fontsize);
+set(titH,'interpreter','latex','Fontsize',fontsize);
+set(fig.CurrentAxes,'FontSize',fontsize);
 set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
 system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
+
+pred_error_series=zeros(size(x_actual_series,2),size(t_series,1));
+for k=1:size(t_series,1)-1
+    pred_error_series(:,k+1)=abs((f(x_actual_series(k,:)',u_actual_series(k,:)',t_series(k,:)',param)-x_actual_series(k,:)')-(x_actual_series(k+1,:)'-x_actual_series(k,:)'));
 end
+pred_error_series=pred_error_series';
+
+figIdx = figIdx + 1;
+fig=figure(figIdx);
+figname='discr_error';
+h=plot(t_series,pred_error_series);
+legH=legend('$\varepsilon_{x}$','$\varepsilon_{\dot{x}}$');
+titH=title('Discretization error');
+set(fig,'units','normalized'); 
+set(legH,'interpreter','latex','Fontsize',fontsize);
+set(titH,'interpreter','latex','Fontsize',fontsize);
+set(fig.CurrentAxes,'FontSize',fontsize);
+set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
+system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
+
+dcm_obj = datacursormode(gcf);
+for i=1:length(h)
+set(gca, 'YScale', 'log');
+[y_max,x_max]=max(pred_error_series(:,i));hDatatip(i)=createDatatip(dcm_obj, h(i), [t_series(x_max),pred_error_series(x_max,i)]);
+set(hDatatip(i),'Position',[t_series(x_max),pred_error_series(x_max,i)]);
+set(hDatatip(i),'interpreter','latex');
+end
+
+set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'epsc');
+system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
+
+end
+
+
