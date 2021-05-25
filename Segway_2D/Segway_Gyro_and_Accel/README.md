@@ -1,8 +1,11 @@
-## Segway 2D with gyroscope an acelerometer
+## Segway 2D with gyroscope and acelerometer
 
 
-Figure depict the system. `main_symbolic_EKF.m` defines the dynamic equations, and exports required functions
+Figure depicts the system. `main_symbolic_EKF.m` defines the dynamic equations, and exports required functions
+`main_snumeric_Information_EKF.m` runs the filter and estimates filter parameters
 
+x_=[q,dq]
+dx_/dt=f(x_)=[dq;ddq(q,dq)]
 
 Sensors are a gyro @ C aligned with direction y(xyz)||2(Chassis) and 2 accelerometers @ C aligned along directions 1(Chassis) and 2(Chassis):
 
