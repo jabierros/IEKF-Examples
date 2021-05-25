@@ -1,4 +1,4 @@
-# Mass Spring Damper IEKF
+# IEKF Examples
 
 This is an example of a, pretty general, **MATLAB** implemementation of the Information Extended Kalman Filter.
 Maximum Likelihood Estimation of filter parameters is considered.
@@ -107,13 +107,13 @@ clear *_series
 rank(OB)
 ```
 
-### Determine LogLikelihood of the filter prediction series.
+### Determine -LogLikelihood of the filter prediction series.
 ```
 logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)
 
 ```
 
-### Determine LogLikelihood of the filter prediction series.
+### Find parameters `theta_`that minimize -LogLikelihood of the filter prediction series.
 
 ```
 theta_=[diag_Sigma_discr;diag_Sigma_z;diag_Sigma_u;mu_x_0;diag_Sigma_x_0]; % define parameters to be identified
@@ -144,22 +144,3 @@ mu_x_0=theta_(5:6)
 diag_Sigma_x_0=theta_(7:8)
 
 ```
-
-
-## The example (mass spring damper)
-The standard mass spring damper:
-
-m ddx + c dx + k (x-rho0)=f_ext
-
-<img src="https://render.githubusercontent.com/render/math?math=m%20%5Cddot%7Bx%7D%20%2Bk(x-%5Crho_0)%20%2B%20c%20%5Cdot%7Bx%7D%20%3D%20f_%7Bext%7D">
-
-Sensor is an accelerometer:
-
-z=ddx(x,dx)
-
-<img src="https://render.githubusercontent.com/render/math?math=z%3D%20%5Cddot%7Bx%7D(x%2C%5Cdot%7Bx%7D)">
-
-![Problem description](https://github.com/jabierros/Mass-Spring-Damper-IEKF/blob/main/mass_spring_damper.png)
-
-
-Refs: help to mathml rendering in github https://jsfiddle.net/8ndx694g/
