@@ -1,6 +1,3 @@
-% close all
-% Plotting(fig_dir, datalogging_string)
-
 clear all
 close all
 
@@ -120,7 +117,6 @@ Sigma2_x = diag(diag_Sigma_x_0.^2);
 n_x=size(x_actual_0,1);
 n_u=size(Sigma_u_actual,1);
 n_z=size(Sigma_z_actual,1);
-
 
 % Variable names for Plotting()
 %---Begin_Edit
