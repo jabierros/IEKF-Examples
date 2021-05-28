@@ -113,7 +113,7 @@ logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v
 
 ```
 
-### Find parameters `theta_`that minimize -LogLikelihood of the filter prediction series.
+### Minimize -LogLikelihood to identify filter parameters in `theta_` (excluded filter initial state)
 
 ```
 theta_=[diag_Sigma_discr;diag_Sigma_z;diag_Sigma_u;mu_x_0;diag_Sigma_x_0]; % define parameters to be identified
@@ -129,7 +129,7 @@ mu_x_0=theta_(5:6)
 diag_Sigma_x_0=theta_(7:8)
 ```
 
-### Minimize -LogLikelihood to identify filter parameters
+### Minimize -LogLikelihood to identify filter parameters `theta_` (including filter initial state)
 ```
 theta_=[diag_Sigma_discr;diag_Sigma_z;diag_Sigma_u;mu_x_0;diag_Sigma_x_0]; % set the vector of to-be-identified parameters
 fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),diag_Sigma_w_x,diag_Sigma_v_x,theta_(5:6),theta_(7:8));
