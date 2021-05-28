@@ -3,7 +3,7 @@
 This is an example of a, pretty general, **MATLAB** implemementation of the Information Extended Kalman Filter.
 Maximum Likelihood Estimation of filter parameters is considered.
 
-Real world data is generated algorithmically. To that end an "actual system" state is integrated in parallel with the IEKF. From this "actual" state, "actual" measurements (noise free)  are obtained. These, in turn, are contaminated with noise. Running in parallel with the IEKF allow to use the filter output as a feedback for control of the system. 
+Real world data is generated algorithmically. To that end an "actual system" state is integrated in parallel with the IEKF. From this "actual" state, "actual" measurements (noise free)  are obtained. These, in turn, are contaminated with noise to generate the so-called "meassured" inputs and sensors. Running in parallel with the IEKF allow to use the filter output as a feedback for control of the system. 
 
 The code is generic enough to be applied to general nonlinear process and sensor equations
 
