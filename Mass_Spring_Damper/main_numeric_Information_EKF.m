@@ -41,7 +41,7 @@ dq_0=[dx_0]'
 x_actual_0=[q_0;dq_0]
 %%---Edit_End
 
-%Initial mu_x covariance (assumed diagonal)
+% Initial mu_x covariance (assumed diagonal)
 %%---Edit_Begin
 sigma_x0=0.5  % m no idea at all
 sigma_dx0=sigma_x0*sqrt(k/m) % m/s no idea at all
@@ -55,8 +55,8 @@ mu_x_0 = x_actual_0+diag_Sigma_x_0; % you can leave it as is
 
 % Parameters for input measurement noise
 %%---Edit_Begin
-sigma_f_ext_actual=0.01;   %actual std of the sensor meassuring f_ext, bias assumed 0
-sigma_f_ext_spec=sigma_f_ext_actual; %actual std of the sensor meassuring f_ext, bias assumed 0
+sigma_f_ext_actual=0.01;   %actual std of the sensor measuring f_ext, bias assumed 0
+sigma_f_ext_spec=sigma_f_ext_actual; %actual std of the sensor measuring f_ext, bias assumed 0
 Sigma_u_actual=diag([sigma_f_ext_actual])
 diag_Sigma_u=[sigma_f_ext_spec]; %input meas. cov. assumed diagonal
 %%---Edit_End
@@ -67,16 +67,16 @@ max_error_discr=[0.001,0.00439535];
 diag_Sigma_discr=max_error_discr; %discr. err. cov. assumed diagonal
 %%---Edit_End
 
-% Parameters for other noise sources in process quation w_x
+% Parameters for other noise sources in process equation w_x
 %%---Edit_Begin
 sigma_w_x_1=0;
-diag_Sigma_w_x=[sigma_w_x_1]; %other proccess noise cov. assumed diagonal
+diag_Sigma_w_x=[sigma_w_x_1]; %other process noise cov. assumed diagonal
 %%---Edit_End
 
-% Parameters for other noise sources in process quation v_x
+% Parameters for other noise sources in sensor equation v_x
 %%---Edit_Begin
 sigma_v_x_1=0;
-diag_Sigma_v_x=[sigma_v_x_1]; %other proccess  noise cov. assumed diagonal
+diag_Sigma_v_x=[sigma_v_x_1]; %other sensor equation noise cov. assumed diagonal
 %%---Edit_End
 
 % Parameters for sensor measurement noise

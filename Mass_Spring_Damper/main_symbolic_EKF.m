@@ -1,17 +1,17 @@
 clear all
 close all
 
-syms t x dx ddx m k x0 c Delta_t f_ext w_x_1 v_x_1 real
+syms t x dx ddx m k rho0 c Delta_t f_ext w_x_1 v_x_1 real
 
 q=[x]'
 dq=[dx]'
 ddq=[ddx]'
 
-param=[m k x0 c Delta_t]'
+param=[m k rho0 c Delta_t]'
 
 iF=-m*[ddx,0,0]' %xyz
 
-sdF=[-k*(x-x0),0,0]'+[-c*dx,0,0]' %xyz
+sdF=[-k*(x-rho0),0,0]'+[-c*dx,0,0]' %xyz
 
 extF=[f_ext,0,0]' %xyz
 
@@ -21,19 +21,19 @@ V_A=V_G %xyz
 
 V_B=V_G %xyz
 
-eq=-((iF'*jacobian(V_G,dq))'+...
+Dyn_eq=-((iF'*jacobian(V_G,dq))'+...
    (sdF'*jacobian(V_A,dq))'+...
    (extF'*jacobian(V_B,dq))')
 
-eq=simplify(eq)
+Dyn_eq=simplify(Dyn_eq)
 
-M=jacobian(eq,ddq)
-M=simplify(M)
-delta=-subs(eq,ddq,[0]')
+M_qq=jacobian(Dyn_eq,ddq)
+M_qq=simplify(M_qq)
+delta_q=-subs(Dyn_eq,ddq,[0]')
 
-delta=simplify(delta)
+delta_q=simplify(delta_q)
 
-ddq_aux=inv(M)*delta
+ddq_aux=inv(M_qq)*delta_q
 ddq_aux=simplify(ddq_aux)
 
 x_=[q;dq]
