@@ -1,7 +1,7 @@
 ## Mass Spring Damper
 Double mendulum without friction, as in the figure:
 
-Sensor is a gyro in y (omega_y), 2 axis accelerometers (a_x, a_z)on the second pendulum tip with axes along directions 1 and 3:
+Sensor is a gyro in y (omega_y), 2 axis accelerometers (a_x, a_z)on the second pendulum tip with axes along directions 1' and 3':
 
 z=[omega_y;a_x(x,dx);a_z(x,dx)]
 
