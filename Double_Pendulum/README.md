@@ -1,17 +1,13 @@
 ## Mass Spring Damper
-The standard mass spring damper:
+Double mendulum without friction, as in the figure:
 
-m ddx + c dx + k (x-rho0)=f_ext
+Sensor is a gyro in y (omega_y), 2 axis accelerometers (a_x, a_z)on the second pendulum tip with axes along directions 1 and 3:
 
-<img src="https://render.githubusercontent.com/render/math?math=m%20%5Cddot%7Bx%7D%20%2Bk(x-%5Crho_0)%20%2B%20c%20%5Cdot%7Bx%7D%20%3D%20f_%7Bext%7D">
+z=[omega_y;a_x(x,dx);a_z(x,dx)]
 
-Sensor is an accelerometer:
+<img src="https://render.githubusercontent.com/render/math?math=%5Cmathbf%7Bz%7D%3D%5Cbegin%7Bbmatrix%7D%0A%5Comega_y%5C%5C%0Aa_x%5C%5C%0Aa_z%5Cend%7Bbmatrix%7D">
 
-z=ddx(x,dx)
 
-<img src="https://render.githubusercontent.com/render/math?math=z%3D%20%5Cddot%7Bx%7D(x%2C%5Cdot%7Bx%7D)">
-
-![Problem description](https://github.com/jabierros/IEKF-Examples/blob/main/Mass_Spring_Damper/mass_spring_damper.png)
-
+![Problem description](https://github.com/jabierros/IEKF-Examples/blob/main/Double_Pendulum/double_pendulum.png)
 
 Refs: help to MathML rendering in github https://jsfiddle.net/8ndx694g/
