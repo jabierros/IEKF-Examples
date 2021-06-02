@@ -7,6 +7,9 @@ Real world data is generated algorithmically. To that end an "actual system" sta
 
 The code is generic enough to be applied to general nonlinear process and sensor equations
 
+The library directory is `LibIEKF`. Copy somewhere in your coputer an add the directory to the **MATLAB** path. 
+Then you can run any of the examples. To that end you first run `main_symbolic_EKF.m` and then `main_numeric_Information_EKF.m`.
+
 ## Globals
 Extensive use of global variables is made on purpose, just to keep the code as simple as possible.
 
