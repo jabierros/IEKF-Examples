@@ -23,10 +23,10 @@ fig=figure(figIdx);
 figname='x_actual';
 plot(t_series,x_actual_series);
 set(gca, 'YScale', 'linear');
+legend_list=[];
 for i=1:n_x
-    legend_list{i}=strcat('$',x_string(i),'$')
+    legend_list{i}=strcat('$',x_string(i),'$');
 end
-
 legH=legend(legend_list);
 titH=title('$\mathbf{x}$ (Actual State)');
 set(fig,'units','normalized');
@@ -48,8 +48,9 @@ fig=figure(figIdx);
 figname='x_discr';
 plot(t_series,x_discr_series);
 set(gca, 'YScale', 'linear');
+legend_list=[];
 for i=1:n_x
-    legend_list{i}=strcat('$',x_string(i),'$')
+    legend_list{i}=strcat('$',x_string(i),'$');
 end
 legH=legend(legend_list);
 titH=title('$\mathbf{x}$ (integrated with discr.)');
@@ -68,11 +69,12 @@ if n_u>0
 plot(t_series,u_meas_series,'-',t_series,u_actual_series,'--');
 end
 set(gca, 'YScale', 'linear');
+legend_list=[];
 for i=1:n_u
-    legend_list{i}=strcat('$\mathrm{meas}(',u_string(i),')$')
+    legend_list{i}=strcat('$\mathrm{meas}(',u_string(i),')$');
 end
 for i=1:n_u
-    legend_list{i+n_u}=strcat('$',u_string(i),'$')
+    legend_list{i+n_u}=strcat('$',u_string(i),'$');
 end
 legH=legend(legend_list);
 titH=title('$\mathrm{meas}(\mathbf{u})$ vs $\mathbf{u}$ ');
@@ -86,13 +88,15 @@ system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 figIdx = figIdx + 1;
 fig=figure(figIdx);
 figname='u_meas_minus_u_actual';
+legend_list=[];
 if n_u>0
 plot(t_series,u_meas_series-u_actual_series,'-');
 xlim([t_0,t_end])
 end
 set(gca, 'YScale', 'linear');
+legend_list=[];
 for i=1:n_u
-    legend_list{i}=strcat('$\mathrm{meas}(',u_string(i),')-',u_string(i),'$')
+    legend_list{i}=strcat('$\mathrm{meas}(',u_string(i),')-',u_string(i),'$');
 end
 legH=legend(legend_list);
 titH=title('$\mathrm{meas}(\mathbf{u})-\mathbf{u}$');
@@ -108,11 +112,12 @@ fig=figure(figIdx);
 figname='z_meas_z_actual';
 plot(t_series,z_meas_series,'-',t_series,z_actual_series,'--');
 set(gca, 'YScale', 'linear');
+legend_list=[];
 for i=1:n_z
-    legend_list{i}=strcat('$\mathrm{meas}(',z_string(i),')$')
+    legend_list{i}=strcat('$\mathrm{meas}(',z_string(i),')$');
 end
 for i=1:n_z
-    legend_list{i+n_z}=strcat('$',z_string(i),'$')
+    legend_list{i+n_z}=strcat('$',z_string(i),'$');
 end
 legH=legend(legend_list);
 titH=title('$\mathrm{meas}(\mathbf{z})$ vs $\mathbf{z}$');
@@ -128,8 +133,9 @@ fig=figure(figIdx);
 figname='z_meas_minus_z_actual';
 plot(t_series,z_meas_series-z_actual_series,'-');
 set(gca, 'YScale', 'linear');
+legend_list=[];
 for i=1:n_z
-    legend_list{i}=strcat('$\mathrm{meas}(',z_string(i),')-',z_string(i),'$')
+    legend_list{i}=strcat('$\mathrm{meas}(',z_string(i),')-',z_string(i),'$');
 end
 legH=legend(legend_list);
 titH=title('$\mathrm{meas}(\mathbf{z})-\mathbf{z}$');
@@ -145,11 +151,12 @@ fig=figure(figIdx);
 figname='mu_x_x_actual';
 plot(t_series,mu_x_series,'-',t_series,x_actual_series,'--');
 set(gca, 'YScale', 'linear');
+legend_list=[];
 for i=1:n_x
-    legend_list{i}=strcat('$\hat{\mu}_{',x_string(i),'}$')
+    legend_list{i}=strcat('$\hat{\mu}_{',x_string(i),'}$');
 end
 for i=1:n_x
-    legend_list{i+n_x}=strcat('$',x_string(i),'$')
+    legend_list{i+n_x}=strcat('$',x_string(i),'$');
 end
 legH=legend(legend_list);
 xlim([0 t_end]);
@@ -167,8 +174,9 @@ fig=figure(figIdx);
 set(fig,'units','normalized'); 
 plot(t_series,mu_x_series-x_actual_series,'-');
 set(gca, 'YScale', 'linear');
+legend_list=[];
 for i=1:n_x
-    legend_list{i}=strcat('$\hat{\mu}_{',x_string(i),'}-',x_string(i),'$')
+    legend_list{i}=strcat('$\hat{\mu}_{',x_string(i),'}-',x_string(i),'$');
 end
 legH=legend(legend_list);
 xlim([0 t_end]);
@@ -194,11 +202,12 @@ fig=figure(figIdx);
 figname='sigma_x';
 plot(t_series,diag_Sigma_x_series,'-',t_series,ones(size(diag_Sigma_x_series,1),1)*sqrt_lim_mu_x_error_squared_mean,'--');
 set(gca, 'YScale', 'log');
+legend_list=[];
 for i=1:n_x
-    legend_list{i}=strcat('${\sigma}_{',x_string(i),'}$')
+    legend_list{i}=strcat('${\sigma}_{',x_string(i),'}$');
 end
 for i=1:n_x
-    legend_list{i+n_x}=strcat('${\mathrm{mean}((\hat{\mu}_{',x_string(i),'}-{',x_string(i),'})^2)^{\frac{1}{2}}}$')
+    legend_list{i+n_x}=strcat('${\mathrm{mean}((\hat{\mu}_{',x_string(i),'}-{',x_string(i),'})^2)^{\frac{1}{2}}}$');
 end
 legH=legend(legend_list);
 yl = ylim;
@@ -225,8 +234,9 @@ fig=figure(figIdx);
 figname='discr_error';
 h=plot(t_series,pred_error_series);
 set(gca, 'YScale', 'log');
+legend_list=[];
 for i=1:n_x
-    legend_list{i}=strcat('$\varepsilon_{',x_string(i),'}$')
+    legend_list{i}=strcat('$\varepsilon_{',x_string(i),'}$');
 end
 legH=legend(legend_list);
 titH=title('Discretization error');
