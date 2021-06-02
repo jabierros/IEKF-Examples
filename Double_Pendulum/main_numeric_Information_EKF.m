@@ -142,7 +142,7 @@ t_end=50;
 %%---Edit_End
 
 %% Maximum Likelihood theta_=[diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u] determination
-use_previously_found_ML_params=true
+use_previously_found_ML_params=false
 if use_previously_found_ML_params
 %%---Edit_Begin
     theta_ =[
@@ -157,7 +157,7 @@ if use_previously_found_ML_params
     logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)
 end
 
-ML_find_params=true
+ML_find_params=false
 if ML_find_params
 theta_=[diag_Sigma_discr];
 % function parameters logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)
@@ -188,7 +188,7 @@ if use_previously_found_ML_params
     logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)
 end
 
-ML_find_params=true
+ML_find_params=false
 if ML_find_params
 theta_=[diag_Sigma_discr;diag_Sigma_z;diag_Sigma_u];
 % function parameters logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)

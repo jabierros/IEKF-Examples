@@ -13,27 +13,34 @@ ddq=[ddtheta1, ddtheta2]'
 
 param=[m1 m2 l1 l2 g Delta_t]'
 
-Acc_P1=[cos(theta1),-sin(theta1);
-        sin(theta1), cos(theta1)]*[ddtheta1*l1;
-                                   dtheta1^2*l1];%xyz
+Acc_P1=[cos(theta1), 0,-sin(theta1);
+        0,           1, 0;
+        sin(theta1), 0, cos(theta1)]*[ddtheta1*l1;
+                                      0
+                                      dtheta1^2*l1];%xyz
     
-Acc_P2=Acc_P1+[cos(theta2),-sin(theta2);
-        sin(theta2), cos(theta2)]*[ddtheta2*l2;
-                                   dtheta2^2*l2];%xyz
+Acc_P2=Acc_P1+[cos(theta2), 0,-sin(theta2);
+           0,           1, 0;
+           sin(theta2), 0, cos(theta2)]*[ddtheta2*l2;
+                                         0
+                                         dtheta2^2*l2];%xyz
                                
 iF_P1=-m1*Acc_P1 %xyz
 iF_P2=-m2*Acc_P2 %xyz
 
-
-V_P1=[cos(theta1),-sin(theta1);
-        sin(theta1), cos(theta1)]*[dtheta1*l1;
-                                   0]; %xyz
-V_P2=V_P1+[cos(theta2),-sin(theta2);
-        sin(theta2), cos(theta2)]*[dtheta2*l2;
-                                   0]; %xyz
+V_P1=[cos(theta1), 0,-sin(theta1);
+      0,           1, 0;
+      sin(theta1), 0, cos(theta1)]*[dtheta1*l1;
+                                    0
+                                    0]; %xyz
+V_P2=V_P1+[cos(theta2), 0,-sin(theta2);
+           0,           1, 0;
+           sin(theta2), 0, cos(theta2)]*[dtheta2*l2;
+                                         0
+                                         0]; %xyz
                                
-gF_P1=[0,-m1*g]';%xyz
-gF_P2=[0,-m2*g]';%xyz
+gF_P1=[0,0,-m1*g]';%xyz
+gF_P2=[0,0,-m2*g]';%xyz
 eq=-((iF_P1'*jacobian(V_P1,dq))'+...
      (iF_P2'*jacobian(V_P2,dq))'+...
      (gF_P1'*jacobian(V_P1,dq))'+...
@@ -78,11 +85,14 @@ f_x=jacobian(f,x_); f_x=simplify(f_x)
 f_u=jacobian(f,u); f_u=simplify(f_u)
 
 %Position sensors in x and y axes
-Acc_P2_Btheta2=simplify(subs([cos(theta2),-sin(theta2);
-        sin(theta2), cos(theta2)]'*(Acc_P2-[0,-g]'), ddq,ddq_aux));
+Acc_P2_Btheta2=simplify(subs([cos(theta2), 0,-sin(theta2);
+                              0,           1, 0;
+                              sin(theta2), 0, cos(theta2)]'*(Acc_P2-[0,0,-g]'),...
+                             ddq,ddq_aux));
     
 h=[dtheta2;
-   Acc_P2_Btheta2]; h=simplify(h)
+   Acc_P2_Btheta2'*[1,0,0]'
+   Acc_P2_Btheta2'*[0,0,1]']; h=simplify(h)
 
 h_noisy=h; % no special noise in this example, but using a programing template that assumes that it can exist
 
