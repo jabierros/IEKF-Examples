@@ -29,7 +29,7 @@ Dyn_eq=simplify(Dyn_eq)
 
 M_qq=jacobian(Dyn_eq,ddq)
 M_qq=simplify(M_qq)
-delta_q=-subs(Dyn_eq,ddq,[0]')
+delta_q=-subs(Dyn_eq,ddq,sym(0)*ddq)
 
 delta_q=simplify(delta_q)
 
@@ -39,9 +39,6 @@ ddq_aux=simplify(ddq_aux)
 x_=[q;dq]
 u=sym([f_ext])
 
-% In this example we are not using noise source w_x_1, but we need it to
-% make a general export of funtions that allows for w_x, matlabFunction
-% does not allows funtion variable to be empty.
 w_x=[w_x_1];
 v_x=[v_x_1];
 
@@ -63,7 +60,7 @@ f_x=jacobian(f,x_); f_x=simplify(f_x)
 
 f_u=jacobian(f,u); f_u=simplify(f_u)
 
-%Position sensors in x and y axes
+%Acceleration sensor
 h=[ddq_aux]; h=simplify(h)
 
 h_noisy=h; % no special noise in this example, but using a programing template that assumes that it can exist

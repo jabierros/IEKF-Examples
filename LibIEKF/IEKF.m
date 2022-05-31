@@ -1,4 +1,4 @@
-function IEKF(diag_Sigma_discr, diag_Sigma_z, diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x)
+function IEKF(sigma_discr, sigma_z, sigma_u,sigma_w_x,sigma_v_x)
 global t  Delta_t
 global u_meas z_meas
 global mu_x Sigma2_x 
@@ -11,14 +11,14 @@ global param
     u_meas=get_u();
     % Effect of noise in u on model covariance (f_u_ is dependent on the state)
     f_u_=f_u(mu_x,u_meas,t,param);
-    Q_u= f_u_*diag(diag_Sigma_u.^2)*f_u_';
+    Q_u= f_u_*diag(sigma_u.^2)*f_u_';
     
     % Effect of noise source w_x_ on model covariance (f_w_x_ is dependent on the state)
     f_w_x_=f_w_x(mu_x,u_meas,t,param);
-    Q_w_x= f_w_x_*diag(diag_Sigma_w_x.^2)*f_w_x_';
+    Q_w_x= f_w_x_*diag(sigma_w_x.^2)*f_w_x_';
     
     % Discretization error effect on model covariance
-    Q_discr=diag((diag_Sigma_discr).^2);
+    Q_discr=diag((sigma_discr).^2);
     
     % Error sources are assumed independent
     Q = Q_discr+Q_u+Q_w_x;
@@ -39,13 +39,13 @@ global param
     % Projection / Observation
     h_u_= h_u(mu_x_pred,u_meas,t,param);
     % effect of noise in u on sensor equation covariance
-    R_u= h_u_*diag(diag_Sigma_u.^2)*h_u_';
+    R_u= h_u_*diag(sigma_u.^2)*h_u_';
     
     h_v_x_= h_v_x(mu_x_pred,u_meas,t,param) ;
     % effect of noise source w_x_ on sensor equation covariance
-    R_v_x= h_v_x_*diag(diag_Sigma_v_x.^2)*h_v_x_';
+    R_v_x= h_v_x_*diag(sigma_v_x.^2)*h_v_x_';
     
-    R_z=diag(diag_Sigma_z.^2);
+    R_z=diag(sigma_z.^2);
     % Sensor error, input error, and other noise sources (w_x_,...) error are assumed independent
     R=R_z+R_u+R_v_x;
     

@@ -1,8 +1,8 @@
 function datalogging(fid, datalogging_string)
 % Datalogged variables
-global t u_meas u_actual z_meas z_actual x_actual mu_x Sigma2_x diag_Sigma_x
+global t u_meas u_actual z_meas z_actual x_actual mu_x Sigma2_x sigma_x
 
-diag_Sigma_x=diag(Sigma2_x).^0.5;
+sigma_x=diag(Sigma2_x).^0.5;
 
 for i=1:size(datalogging_string,1)
     var=eval(datalogging_string{i});

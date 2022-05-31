@@ -1,6 +1,6 @@
 function load_datalogging(sol, datalogging_string)
 % Datalogged variables
-global t u_meas u_actual z_meas z_actual x_actual mu_x Sigma2_x diag_Sigma_x 
+global t u_meas u_actual z_meas z_actual x_actual mu_x Sigma2_x sigma_x 
 
 load(sol,'-ascii')
 
