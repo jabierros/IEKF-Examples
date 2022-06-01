@@ -77,7 +77,7 @@ for i=1:n_x
     legend_list{i}=strcat('$\varepsilon_{',x_string(i),'}$');
 end
 legH=legend(legend_list);
-titH=title('Discretization error ($\left|\mathbf{x}^{discr}-\mathbf{x}^{tr}\right|$)');
+titH=title('Discretization error ($\left|\mathbf{f}(\mathbf{x}^{tr}_k)-\mathbf{x}^{tr}_{k+1}\right|$)');
 set(fig,'units','normalized'); 
 set(legH,'interpreter','latex','Fontsize',fontsize);
 set(titH,'interpreter','latex','Fontsize',fontsize);

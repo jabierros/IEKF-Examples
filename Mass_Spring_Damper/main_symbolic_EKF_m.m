@@ -1,6 +1,6 @@
 clear all; clc;
-cd(fileparts(which(mfilename)));  % In a .m file uncomment this
-% cd(fileparts(matlab.desktop.editor.getActiveFilename)); % In a .mlx file uncomment this
+% cd(fileparts(which(mfilename)));  % In a .m file uncomment this
+cd(fileparts(matlab.desktop.editor.getActiveFilename)); % In a .mlx file uncomment this
 %% Example: Mass Spring Damper
 % Develop a Kalman filter to track the state of the typical Mass Spring Damper. 
 % We have an external forze. We use an acceleration sensor.

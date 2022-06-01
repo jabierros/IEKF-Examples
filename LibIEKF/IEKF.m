@@ -1,5 +1,5 @@
 function IEKF(sigma_discr, sigma_z, sigma_u,sigma_w_x,sigma_v_x)
-global t  Delta_t
+global t Delta_t
 global u_meas z_meas
 global mu_x Sigma2_x 
 global mu_x_pred Sigma2_x_pred Q R
@@ -13,9 +13,8 @@ global param
     f_u_=f_u(mu_x,u_meas,t,param);
     Q_u= f_u_*diag(sigma_u.^2)*f_u_';
     
-    % Effect of noise source w_x_ on model covariance (f_w_x_ is dependent on the state)
-    f_w_x_=f_w_x(mu_x,u_meas,t,param);
-    Q_w_x= f_w_x_*diag(sigma_w_x.^2)*f_w_x_';
+    % Effect of noise source w_x_ on model covariance
+    Q_w_x= diag(sigma_w_x.^2);
     
     % Discretization error effect on model covariance
     Q_discr=diag((sigma_discr).^2);
@@ -41,9 +40,8 @@ global param
     % effect of noise in u on sensor equation covariance
     R_u= h_u_*diag(sigma_u.^2)*h_u_';
     
-    h_v_x_= h_v_x(mu_x_pred,u_meas,t,param) ;
-    % effect of noise source w_x_ on sensor equation covariance
-    R_v_x= h_v_x_*diag(sigma_v_x.^2)*h_v_x_';
+    % effect of noise source v_x_ on sensor equation covariance
+    R_v_x= diag(sigma_v_x.^2);
     
     R_z=diag(sigma_z.^2);
     % Sensor error, input error, and other noise sources (w_x_,...) error are assumed independent
