@@ -15,3 +15,12 @@ z=ddx(x,dx)
 
 
 Refs: help to MathML rendering in github https://jsfiddle.net/8ndx694g/
+
+See SYMBOLIC mlx file: 
+
+https://htmlpreview.github.io/?https://github.com/jabierros/IEKF-Examples/blob/LibIEKF_0/Mass_Spring_Damper/main_symbolic_EKF_mlx.html
+
+See NUMERIC mlx file: 
+
+https://htmlpreview.github.io/?https://github.com/jabierros/IEKF-Examples/blob/LibIEKF_0/Mass_Spring_Damper/main_numeric_Information_EKF_mlx.html
+
