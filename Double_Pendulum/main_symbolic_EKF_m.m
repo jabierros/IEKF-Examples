@@ -132,13 +132,13 @@ f_u=jacobian(f,u); f_u=simplify(f_u)
 % Acceleration sensors require defining acceleration in sensors base $B\theta_2\equiv1'2'3'$ 
 % in terms of the state $\mathbf{x}$.
 
-Acc_P2_Btheta2=simplify(subs([cos(theta2), 0,-sin(theta2);
+acc_P2_Btheta2=simplify(subs([cos(theta2), 0,-sin(theta2);
                               0,           1, 0;
                               sin(theta2), 0, cos(theta2)]'*(acc_P2-[0,0,-g]'),...
                              ddq,ddq_func));
 h=[dtheta2;
-   Acc_P2_Btheta2'*[1,0,0]'
-   Acc_P2_Btheta2'*[0,0,1]']; h=simplify(h)
+   acc_P2_Btheta2'*[1,0,0]'
+   acc_P2_Btheta2'*[0,0,1]']; h=simplify(h)
 h_x=jacobian(h,x_); h_x=simplify(h_x)
 h_u=jacobian(h,u); h_u=simplify(h_u)
 matlabFunction(f,'file','f','vars',{x_ u t param});

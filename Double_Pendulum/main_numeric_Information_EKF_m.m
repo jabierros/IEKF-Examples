@@ -1,6 +1,6 @@
 clear all; clc;
-% cd(fileparts(which(mfilename)));  % In a .m file uncomment this
-cd(fileparts(matlab.desktop.editor.getActiveFilename)); % In a .mlx file uncomment this
+cd(fileparts(which(mfilename)));  % In a .m file uncomment this
+% cd(fileparts(matlab.desktop.editor.getActiveFilename)); % In a .mlx file uncomment this
 %% Example: Double Pendulum
 % Develop a Kalman filter to track the state of the typical particle Double 
 % Pendulum. There is no friction. Sensor is a gyro in y ($\omega_y$) and 2 axis 
@@ -499,5 +499,5 @@ Plotting(fig_dir, datalogging_string);
 %% Helper functions
 
 function u_actual=my_u_actual_func(t)
-u_actual=[];
+u_actual=zeros(0,1);
 end
