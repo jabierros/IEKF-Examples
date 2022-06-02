@@ -12,8 +12,11 @@ z=[omega_y;a_x(x,dx);a_z(x,dx)]
 
 Refs: help to MathML rendering in github https://jsfiddle.net/8ndx694g/
 
-See exported mlx file: 
+See SYMBOLIC mlx file: 
+
 https://htmlpreview.github.io/?https://github.com/jabierros/IEKF-Examples/blob/LibIEKF_0/Double_Pendulum/main_symbolic_EKF_mlx.html
+
+See SYMBOLIC mlx file: 
 
 https://htmlpreview.github.io/?https://github.com/jabierros/IEKF-Examples/blob/LibIEKF_0/Double_Pendulum/main_numeric_Information_EKF_mlx.html
 
