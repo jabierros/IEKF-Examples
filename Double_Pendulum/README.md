@@ -16,7 +16,7 @@ See SYMBOLIC mlx file:
 
 https://htmlpreview.github.io/?https://github.com/jabierros/IEKF-Examples/blob/LibIEKF_0/Double_Pendulum/main_symbolic_EKF_mlx.html
 
-See SYMBOLIC mlx file: 
+See NUMERIC mlx file: 
 
 https://htmlpreview.github.io/?https://github.com/jabierros/IEKF-Examples/blob/LibIEKF_0/Double_Pendulum/main_numeric_Information_EKF_mlx.html
 
