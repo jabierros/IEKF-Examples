@@ -1,4 +1,4 @@
-## Mass Spring Damper
+## Double Pendulum
 Double mendulum without friction, as in the figure:
 
 Sensor is a gyro in y (omega_y), 2 axis accelerometers (a_x, a_z)on the second pendulum tip with axes along directions 1' and 3':
@@ -11,3 +11,9 @@ z=[omega_y;a_x(x,dx);a_z(x,dx)]
 ![Problem description](https://github.com/jabierros/IEKF-Examples/blob/main/Double_Pendulum/double_pendulum.png)
 
 Refs: help to MathML rendering in github https://jsfiddle.net/8ndx694g/
+
+See exported mlx file: 
+https://htmlpreview.github.io/?https://github.com/jabierros/IEKF-Examples/blob/LibIEKF_0/Double_Pendulum/main_symbolic_EKF_mlx.html
+
+https://htmlpreview.github.io/?https://github.com/jabierros/IEKF-Examples/blob/LibIEKF_0/Double_Pendulum/main_numeric_Information_EKF_mlx.html
+
