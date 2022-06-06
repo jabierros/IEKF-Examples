@@ -36,11 +36,11 @@ x_actual=x_actual_0;
 seed=1789;
 u_actual_func =...; % u_actual_func = @(t) my_u_actual_func(t);
 
-diag_Sigma_discr=...; n_x times 1 column vector of filter assumed discretization error std-s
-diag_Sigma_z=...; n_z times 1 column vector of filter assumed sensor measurement std-s
-diag_Sigma_u=...; n_u times 1 column vector of filter assumed input measurement std-s
-diag_Sigma_w_x=...; n_x times 1 column vector of filter assumed other process equation noise (related to modeling errors usually)
-diag_Sigma_v_x=...; n_z times 1 column vector of filter assumed other sensor equation noise (related to modeling errors usually)
+sigma_discr=...; n_x times 1 column vector of filter assumed discretization error std-s
+sigma_z=...; n_z times 1 column vector of filter assumed sensor measurement std-s
+sigma_u=...; n_u times 1 column vector of filter assumed input measurement std-s
+sigma_w_x=...; n_x times 1 column vector of filter assumed other process equation noise (related to modeling errors usually)
+sigma_v_x=...; n_z times 1 column vector of filter assumed other sensor equation noise (related to modeling errors usually)
 
 rng(seed); u_meas=get_u(); z_meas=get_z();
 
@@ -119,31 +119,31 @@ logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v
 ### Minimize -LogLikelihood to identify filter parameters in `theta_` (excluded filter initial state)
 
 ```
-theta_=[diag_Sigma_discr;diag_Sigma_z;diag_Sigma_u;mu_x_0;diag_Sigma_x_0]; % define parameters to be identified
-fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),diag_Sigma_w_x,diag_Sigma_v_x,theta_(5:6),theta_(7:8));
+theta_=[sigma_discr;sigma_z;sigma_u;mu_x_0;sigma_x_0]; % define parameters to be identified
+fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),sigma_w_x,sigma_v_x,theta_(5:6),theta_(7:8));
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_,options);
 
 % untangel parameters
-diag_Sigma_discr=theta_(1:2)
-diag_Sigma_z=theta_(3)
-diag_Sigma_u=theta_(4)
+sigma_discr=theta_(1:2)
+sigma_z=theta_(3)
+sigma_u=theta_(4)
 mu_x_0=theta_(5:6)
-diag_Sigma_x_0=theta_(7:8)
+sigma_x_0=theta_(7:8)
 ```
 
 ### Minimize -LogLikelihood to identify filter parameters `theta_` (including filter initial state)
 ```
-theta_=[diag_Sigma_discr;diag_Sigma_z;diag_Sigma_u;mu_x_0;diag_Sigma_x_0]; % set the vector of to-be-identified parameters
+theta_=[sigma_discr;sigma_z;sigma_u;mu_x_0;sigma_x_0]; % set the vector of to-be-identified parameters
 fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),diag_Sigma_w_x,diag_Sigma_v_x,theta_(5:6),theta_(7:8));
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_,options);
 
 % untangle the parameters
-diag_Sigma_discr=theta_(1:2)
-diag_Sigma_z=theta_(3)
-diag_Sigma_u=theta_(4)
+sigma_discr=theta_(1:2)
+sigma_z=theta_(3)
+sigma_u=theta_(4)
 mu_x_0=theta_(5:6)
-diag_Sigma_x_0=theta_(7:8)
+sigma_x_0=theta_(7:8)
 
 ```
