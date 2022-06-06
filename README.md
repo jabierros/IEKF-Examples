@@ -3,7 +3,7 @@
 This is an example of a, pretty general, **MATLAB** implemementation of the Information Extended Kalman Filter.
 Maximum Likelihood Estimation of filter parameters is considered.
 
-Real world data is generated algorithmically. To that end an "actual system" state is integrated in parallel with the IEKF. From this "actual" state, "actual" measurements (noise free)  are obtained. These, in turn, are contaminated with noise to generate the so-called "meassured" inputs and sensors. Running in parallel with the IEKF allow to use the filter output as a feedback for control of the system. 
+Real world data is generated algorithmically. To that end an "actual system" state is integrated in parallel with the IEKF. From this "actual" state, "actual" measurements (noise free)  are obtained. These, in turn, are contaminated with noise to generate the so-called "meassured" inputs and sensors. Running the simulation of the real system in parallel with the IEKF allows to use the filter output as a feedback for control of the system. 
 
 The code is generic enough to be applied to general nonlinear process and sensor equations
 
@@ -15,9 +15,9 @@ Extensive use of global variables is made on purpose, just to keep the code as s
 
 * `global t t_0 t_end Delta_t`. time, initial time, final time and time step length (they are same for filter and simulation).
 * `global mu_x Sigma2_x`. state vector and state covariance matrix determined by the filter.
-* `global u_meas z_meas`. simulated measurement vector of filter input and sensors. `u_meas=get_u()` and `z_meas=get_z()`, are called to get the variables at t. When calling these functions the actual system state is integrated to actualize it to the current time.
-* `global Sigma_u_actual Sigma_z_actual x_actual x_actual_0 u_actual_func seed`.  Actual system measurement covariance of input and sensor (make `Sigma_u_actual zero(n_u,n_u)` if input isn't noisy), actual system state, initial state. `u_actual_func` is a function handle `u_actual_func = @(t) (...)` to a function defining the actual system input as a function of time. Other global variables in this epigraph (actual sytem variables) can be used to implement the function. `seed` actual system random generator seed used to generate measurements of input and sensors. As the input is generated alongside the filter, parameter tuning requires repeatable random measurement sequences, and to that end seed is used to restart the random number generator at each (`t_0:Delta_t:t_end`) invocation of the filter.
-* `global param` these are the model and sensor equation parameters (defined in `main_symbolic_EKF.m`)
+* `global u_meas z_meas`. simulated measurement vector of filter input and sensors. `u_meas=get_u()` and `z_meas=get_z()`, are called to get the variables at time `t`. When calling these functions the actual system state is integrated to actualize it to the current time.
+* `global sigma_u_actual sigma_z_actual x_actual x_actual_0 u_actual_func seed`.  Actual system measurement covariance of input and sensor (make `sigma_u_actual zero(n_u,n_u)` if input isn't noisy), actual system state, actual system initial state. `u_actual_func` is a function handle `u_actual_func = @(t) (...)` to a function defining the actual system input as a function of time. Other global variables in this epigraph (actual sytem variables) can be used to implement the function. `seed` actual system random generator seed used to generate measurements of input and sensors. As the input is generated alongside the filter, parameter tuning requires repeatable random measurement sequences, and to that end seed is used to restart the random number generator at each (`t_0:Delta_t:t_end`) invocation of the filter.
+* `global param` these are the model and sensor equation parameters (coincident with those defined in `main_symbolic_EKF.m`)
 
 ## Typical invocation
 ### Filter alone
