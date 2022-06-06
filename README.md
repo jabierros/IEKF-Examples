@@ -45,7 +45,7 @@ sigma_v_x=...; n_z times 1 column vector of filter assumed other sensor equation
 rng(seed); u_meas=get_u(); z_meas=get_z();
 
 for k=1:t_end/Delta_t
-    IEKF(diag_Sigma_discr, diag_Sigma_z, diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x);
+    IEKF(sigma_discr, sigma_z, sigma_u,sigma_w_x,sigma_v_x);
 end
 ```
 
@@ -54,7 +54,7 @@ end
 ...
 fid=fopen('sol.dat','w'); % Sets file for datalogging
 
-datalogging_string={'t';'x_actual';'mu_x';'u_actual';'u_meas';'z_actual';'z_meas';'diag_Sigma_x';'mu_x_error'}; % Set variables for dataloging
+datalogging_string={'t';'x_actual';'mu_x';'u_actual';'u_meas';'z_actual';'z_meas';'sigma_x';'mu_x_error'}; % Set variables for dataloging
 
 % Datalog k=0 %Requires restarting seed
 datalogging(fid, datalogging_string);
@@ -63,7 +63,7 @@ rng(seed); u_meas=get_u(); z_meas=get_z();
 
 for k=1:t_end/Delta_t
     % filter
-    IEKF(diag_Sigma_discr, diag_Sigma_z, diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x);
+    IEKF(sigma_discr, sigma_z, sigma_u,sigma_w_x,sigma_v_x);
     
     % Datalog k+1
     datalogging(fid, datalogging_string)
@@ -77,7 +77,7 @@ fclose(fid);
 
 ```
 load_datalogging('sol.dat', datalogging_string);
-t_series, x_actual_series, mu_x_series, u_actual_series, u_meas_series, z_actual_series, z_meas_series, diag_Sigma_x_series
+t_series, x_actual_series, mu_x_series, u_actual_series, u_meas_series, z_actual_series, z_meas_series, sigma_x_series
 mu_x_error_series=mu_x_series-x_actual_series;
 plot(t_series,mu_x_series-x_actual_series,'-');
 ```
@@ -112,7 +112,7 @@ rank(OB)
 
 ### Determine -LogLikelihood of the filter prediction series.
 ```
-logL_IEKF(diag_Sigma_discr,diag_Sigma_z,diag_Sigma_u,diag_Sigma_w_x,diag_Sigma_v_x,mu_x_0,diag_Sigma_x_0)
+logL_IEKF(sigma_discr,sigma_z,sigma_u,sigma_w_x,sigma_v_x,mu_x_0,sigma_x_0)
 
 ```
 
@@ -135,7 +135,7 @@ sigma_x_0=theta_(7:8)
 ### Minimize -LogLikelihood to identify filter parameters `theta_` (including filter initial state)
 ```
 theta_=[sigma_discr;sigma_z;sigma_u;mu_x_0;sigma_x_0]; % set the vector of to-be-identified parameters
-fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),diag_Sigma_w_x,diag_Sigma_v_x,theta_(5:6),theta_(7:8));
+fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),sigma_w_x,sigma_v_x,theta_(5:6),theta_(7:8));
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_,options);
 
