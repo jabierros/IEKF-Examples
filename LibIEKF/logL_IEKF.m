@@ -12,12 +12,11 @@ global param
 logL=0;
 %% Read Input and Sensor at first (k=1)
 
-rng(seed);
-
 t=t_0;
 mu_x=mu_x_0;
 Sigma2_x=diag((sigma_x_0).^2);
-rng(seed); u_meas=get_u(); z_meas=get_z();
+% rng(seed);
+u_meas=get_u(); z_meas=get_z();
 
 for k=1:t_end/Delta_t
 

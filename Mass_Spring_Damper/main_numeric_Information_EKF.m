@@ -29,7 +29,7 @@ rng_status=rng;
 % time $t_{end}$
 
 t_0=0;         		    %s
-Delta_t=0.005;           %s
+Delta_t=0.005;          %s
 t_end=50;               %s
 %% 
 % Define model parameters
@@ -66,7 +66,6 @@ sigma_f_ext=0.01;
 sigma_f_ext_spec=0.08;
 sigma_u_actual=[sigma_f_ext];
 sigma_u=[sigma_f_ext_spec];
-n_u=size(sigma_u_actual,1);
 %% 
 % Our Euler discretization assumes $\mathbf{q}_{k+1}=\mathbf{q}_{k}+\frac{1}{1!}\dot{\mathbf{q}}_{k}\Delta 
 % t$ and $\dot{\mathbf{q}}_{k+1}=\dot{\mathbf{q}}_{k}+\frac{1}{1!}\ddot{\mathbf{q}}(\mathbf{q}_k,\dot{\mathbf{q}}_k,t_k)\Delta 

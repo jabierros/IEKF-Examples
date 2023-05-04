@@ -5,8 +5,6 @@ global mu_x Sigma2_x
 global mu_x_pred Sigma2_x_pred Q R
 global param
     
-    %---Begin--- One step of Kalman filter (k-th)
-    
     % Prediction
     u_meas=get_u();
     % Effect of noise in u on model covariance (f_u_ is dependent on the state)
@@ -17,7 +15,11 @@ global param
     Q_w_x= diag(sigma_w_x.^2);
     
     % Discretization error effect on model covariance
+    if size(sigma_discr,2)==1
     Q_discr=diag((sigma_discr).^2);
+    else
+    Q_discr=sigma_discr*sigma_discr';
+    end
     
     % Error sources are assumed independent
     Q = Q_discr+Q_u+Q_w_x;
@@ -41,8 +43,11 @@ global param
     R_u= h_u_*diag(sigma_u.^2)*h_u_';
     
     % effect of noise source v_x_ on sensor equation covariance
+    if size(sigma_v_x,2)==1
     R_v_x= diag(sigma_v_x.^2);
-    
+    else
+    R_v_x= sigma_v_x*sigma_v_x';
+    end
     R_z=diag(sigma_z.^2);
     % Sensor error, input error, and other noise sources (w_x_,...) error are assumed independent
     R=R_z+R_u+R_v_x;
@@ -56,7 +61,5 @@ global param
     %mu_x=inv(I)*(I_pred*mu_x_pred+I_proj*mu_x_proj);
     mu_x=inv(I)*(i_pred+i_proj);
     Sigma2_x=inv(I);
-    
-    %%---End--- One step of Kalman filter (k-th)
 
 end
