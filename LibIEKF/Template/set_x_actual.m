@@ -18,6 +18,6 @@ elseif t>t_prev
     x_actual_prev=x_actual;
     t_prev=t;
 else
-    error('t must be such t==t_0 or t=t_prev+Delta_t');
+    error('t must be such t==t_0, t=t_prev or t=t_prev+Delta_t');
 end
 end
