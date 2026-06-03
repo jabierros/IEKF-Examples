@@ -1,11 +1,9 @@
-function u_=get_u()
-global t
-global u_actual
-global sigma_u_actual u_actual_func 
-set_x_actual();
-u_actual=u_actual_func(t);
-% If there is an input it is supossed to be measured, measurement is
-% generated from true value of u u_actual (obtained from the user provided
-% function u_actual_func(t), to which sensor noise is added
-u_=u_actual+sigma_u_actual.*randn(size(u_actual,1),1);
+function [u_meas, S] = get_u(S)
+% GET_U Simulates the measured input with noise.
+%
+% [u_meas, S] = get_u(S)
+
+    u_true = S.u_true_func(S.t);
+    u_meas = u_true + S.sigma_u_true .* randn(size(u_true, 1), 1);
+    S.u_true = u_true;
 end

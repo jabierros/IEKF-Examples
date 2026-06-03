@@ -1,12 +1,14 @@
-function z_=get_z()
-global t
-global x_actual z_actual u_actual u_actual_func 
-global sigma_z_actual
-global param
-set_x_actual();
-u_actual=u_actual_func(t);
-% Sensor data is generated from true system state and input (x_actual,u_actual), by using
-% h, to which sensor noise is added
-z_actual=h(x_actual,u_actual,t,param);
-z_=z_actual+sigma_z_actual.*randn(size(z_actual,1),1);
+function [z_meas, S] = get_z(S)
+% GET_Z Simulates sensor measurement with noise.
+%
+% [z_meas, S] = get_z(S)
+
+    [x_true, S] = get_x_true(S);
+    u_true = S.u_true_func(S.t);
+    z_true = h_true(x_true, u_true, S.t, S.param_true);
+    z_meas = z_true + S.sigma_z_true .* randn(size(z_true, 1), 1);
+    
+    S.x_true = x_true;
+    S.u_true = u_true;
+    S.z_true = z_true;
 end

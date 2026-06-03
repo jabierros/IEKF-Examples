@@ -1,9 +1,11 @@
-function Plotting(fig_dir, datalogging_string)
-global t_0 t_end
-global x_actual_0
-global param
-%global n_x n_u n_z
-global x_string u_string z_string
+function Plotting(fig_dir, Simulation, S)
+t_0 = S.t_0;
+t_end = S.t_end;
+x_true_0 = S.x_true_0;
+param = S.param;
+x_string = S.x_string;
+u_string = S.u_string;
+z_string = S.z_string;
 
 [mkdir_success,mkdir_message]=mkdir(fig_dir);
 
@@ -12,35 +14,35 @@ set(groot, 'defaultLegendInterpreter','latex');
 
 fontsize=12;
 
-load_datalogging('sol.dat', datalogging_string);
+unpack_simulation(Simulation);
 
-mu_x_error_series=mu_x_series-x_actual_series;
+mu_x_error_series=mu_x_series-x_true_series;
 %--------------------------------------------------------------------------
 figIdx=1;
 
 fig=figure(figIdx);
-figname='x_actual';
-plot(t_series,x_actual_series);
+figname='x_true';
+plot(t_series,x_true_series);
 set(gca, 'YScale', 'linear');
 legend_list=[];
-n_x=size(x_actual_series,2);
+n_x=size(x_true_series,2);
 for i=1:n_x
     legend_list{i}=strcat('$',x_string(i),'^{tr}$');
 end
 legH=legend(legend_list);
-titH=title('$\mathbf{x}^{tr}$ (Actual State)');
+titH=title('$\mathbf{x}^{tr}$ (True State)');
 set(fig,'units','normalized');
 set(legH,'interpreter','latex','Fontsize',fontsize);
 set(titH,'interpreter','latex','Fontsize',fontsize);
 set(fig.CurrentAxes,'FontSize',fontsize)
-set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'png');
+set(gcf,'renderer','painters');exportgraphics(gcf,[fig_dir,'/',figname,'.png']);
 %system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 %--------------------------------------------------------------------------
 x_discr_series=[];
-x_=x_actual_0;
+x_=x_true_0;
 for k=1:length(t_series)
  x_discr_series=[x_discr_series,x_];
- x_=f(x_, u_actual_series(k,:)', t_series(k),param);
+ x_=f(x_, u_true_series(k,:)', t_series(k),param);
 end
 
 figIdx = figIdx + 1;
@@ -58,12 +60,12 @@ set(fig,'units','normalized');
 set(legH,'interpreter','latex','Fontsize',fontsize);
 set(titH,'interpreter','latex','Fontsize',fontsize);
 set(fig.CurrentAxes,'FontSize',fontsize);
-set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'png');
+set(gcf,'renderer','painters');exportgraphics(gcf,[fig_dir,'/',figname,'.png']);
 %system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 %--------------------------------------------------------------------------
-pred_error_series=zeros(size(x_actual_series,2),size(t_series,1));
+pred_error_series=zeros(size(x_true_series,2),size(t_series,1));
 for k=1:size(t_series,1)-1
-    pred_error_series(:,k+1)=abs((f(x_actual_series(k,:)',u_actual_series(k,:)',t_series(k,:)',param)-x_actual_series(k,:)')-(x_actual_series(k+1,:)'-x_actual_series(k,:)'));
+    pred_error_series(:,k+1)=abs((f(x_true_series(k,:)',u_true_series(k,:)',t_series(k,:)',param)-x_true_series(k,:)')-(x_true_series(k+1,:)'-x_true_series(k,:)'));
 end
 pred_error_series=pred_error_series';
 
@@ -91,16 +93,16 @@ for i=1:length(h)
 % set(hDatatip(i),'interpreter','latex');
 end
 
-set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'png');
+set(gcf,'renderer','painters');exportgraphics(gcf,[fig_dir,'/',figname,'.png']);
 %system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 
 figIdx = figIdx + 1;
 fig=figure(figIdx);
-figname='u_meas_u_actual';
+figname='u_meas_u_true';
 xlim([t_0,t_end])
 n_u=size(u_meas_series,2);
 if n_u>0
-plot(t_series,u_meas_series,'-',t_series,u_actual_series,'--');
+plot(t_series,u_meas_series,'-',t_series,u_true_series,'--');
 end
 set(gca, 'YScale', 'linear');
 legend_list=[];
@@ -116,15 +118,15 @@ set(fig,'units','normalized');
 set(legH,'interpreter','latex','Fontsize',fontsize);
 set(titH,'interpreter','latex','Fontsize',fontsize);
 set(fig.CurrentAxes,'FontSize',fontsize);
-set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'png');
+set(gcf,'renderer','painters');exportgraphics(gcf,[fig_dir,'/',figname,'.png']);
 %system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 %--------------------------------------------------------------------------
 figIdx = figIdx + 1;
 fig=figure(figIdx);
-figname='u_meas_minus_u_actual';
+figname='u_meas_minus_u_true';
 legend_list=[];
 if n_u>0
-plot(t_series,u_meas_series-u_actual_series,'-');
+plot(t_series,u_meas_series-u_true_series,'-');
 xlim([t_0,t_end])
 end
 set(gca, 'YScale', 'linear');
@@ -138,13 +140,13 @@ set(fig,'units','normalized');
 set(legH,'interpreter','latex','Fontsize',fontsize);
 set(titH,'interpreter','latex','Fontsize',fontsize);
 set(fig.CurrentAxes,'FontSize',fontsize);
-set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'png');
+set(gcf,'renderer','painters');exportgraphics(gcf,[fig_dir,'/',figname,'.png']);
 %system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 %--------------------------------------------------------------------------
 figIdx = figIdx + 1;
 fig=figure(figIdx);
-figname='z_meas_z_actual';
-plot(t_series,z_meas_series,'-',t_series,z_actual_series,'--');
+figname='z_meas_z_true';
+plot(t_series,z_meas_series,'-',t_series,z_true_series,'--');
 set(gca, 'YScale', 'linear');
 legend_list=[];
 n_z=size(z_meas_series,2);
@@ -160,13 +162,13 @@ set(fig,'units','normalized');
 set(legH,'interpreter','latex','Fontsize',fontsize);
 set(titH,'interpreter','latex','Fontsize',fontsize);
 set(fig.CurrentAxes,'FontSize',fontsize);
-set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'png');
+set(gcf,'renderer','painters');exportgraphics(gcf,[fig_dir,'/',figname,'.png']);
 %system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 %--------------------------------------------------------------------------
 figIdx = figIdx + 1;
 fig=figure(figIdx);
-figname='z_meas_minus_z_actual';
-plot(t_series,z_meas_series-z_actual_series,'-');
+figname='z_meas_minus_z_true';
+plot(t_series,z_meas_series-z_true_series,'-');
 set(gca, 'YScale', 'linear');
 legend_list=[];
 for i=1:n_z
@@ -178,20 +180,30 @@ set(fig,'units','normalized');
 set(legH,'interpreter','latex','Fontsize',fontsize);
 set(titH,'interpreter','latex','Fontsize',fontsize);
 set(fig.CurrentAxes,'FontSize',fontsize);
-set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'png');
+set(gcf,'renderer','painters');exportgraphics(gcf,[fig_dir,'/',figname,'.png']);
 %system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 %--------------------------------------------------------------------------
 figIdx = figIdx + 1;
 fig=figure(figIdx);
-figname='mu_x_x_actual';
-plot(t_series,mu_x_series,'-',t_series,x_actual_series,'--');
+figname='mu_x_x_true';
+has_sm = exist('mu_x_sm_series', 'var');
+if has_sm
+    plot(t_series,mu_x_series,'-',t_series,mu_x_sm_series,'-.',t_series,x_true_series,'--');
+else
+    plot(t_series,mu_x_series,'-',t_series,x_true_series,'--');
+end
 set(gca, 'YScale', 'linear');
 legend_list=[];
 for i=1:n_x
-    legend_list{i}=strcat('$\hat{\mu}_{',x_string(i),'}$');
+    legend_list{end+1}=strcat('$\hat{\mu}_{',x_string(i),'}$');
+end
+if has_sm
+    for i=1:n_x
+        legend_list{end+1}=strcat('$\hat{\mu}^{sm}_{',x_string(i),'}$');
+    end
 end
 for i=1:n_x
-    legend_list{i+n_x}=strcat('$',x_string(i),'$');
+    legend_list{end+1}=strcat('$',x_string(i),'$');
 end
 legH=legend(legend_list);
 xlim([0 t_end]);
@@ -201,17 +213,26 @@ set(fig,'units','normalized');
 set(legH,'interpreter','latex','Fontsize',fontsize);
 set(titH,'interpreter','latex','Fontsize',fontsize);
 set(fig.CurrentAxes,'FontSize',fontsize);
-set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'png');
+set(gcf,'renderer','painters');exportgraphics(gcf,[fig_dir,'/',figname,'.png']);
 %system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 %--------------------------------------------------------------------------
 figIdx = figIdx + 1;
 fig=figure(figIdx);
 set(fig,'units','normalized'); 
-plot(t_series,mu_x_series-x_actual_series,'-');
+if has_sm
+    plot(t_series,mu_x_series-x_true_series,'-',t_series,mu_x_sm_series-x_true_series,'-.');
+else
+    plot(t_series,mu_x_series-x_true_series,'-');
+end
 set(gca, 'YScale', 'linear');
 legend_list=[];
 for i=1:n_x
-    legend_list{i}=strcat('$\hat{\mu}_{',x_string(i),'}-',x_string(i),'$');
+    legend_list{end+1}=strcat('$\hat{\mu}_{',x_string(i),'}-',x_string(i),'$');
+end
+if has_sm
+    for i=1:n_x
+        legend_list{end+1}=strcat('$\hat{\mu}^{sm}_{',x_string(i),'}-',x_string(i),'$');
+    end
 end
 legH=legend(legend_list);
 xlim([0 t_end]);
@@ -220,8 +241,8 @@ set(legH,'interpreter','latex','Fontsize',fontsize);
 titH=title('$\hat{\mu}_{\mathbf{x}}-\mathbf{x}$');
 set(titH,'interpreter','latex','Fontsize',fontsize);
 set(fig.CurrentAxes,'FontSize',fontsize);
-figname='mu_x_minus_x_actual';
-set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'png');
+figname='mu_x_minus_x_true';
+set(gcf,'renderer','painters');exportgraphics(gcf,[fig_dir,'/',figname,'.png']);
 %system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 %--------------------------------------------------------------------------
 % Real filter error statistics @ lim k -> infty
@@ -235,14 +256,37 @@ sqrt_lim_mu_x_error_squared_mean=mean((lim_mu_x_error).^2).^0.5;
 figIdx = figIdx + 1;
 fig=figure(figIdx);
 figname='sigma_x';
-plot(t_series,sigma_x_series,'-',t_series,ones(size(sigma_x_series,1),1)*sqrt_lim_mu_x_error_squared_mean,'--');
+if has_sm
+    sigma_x_sm_series = zeros(size(t_series, 1), n_x);
+    for i=1:n_x
+        sigma_x_sm_series(:, i) = sqrt(squeeze(Sigma2_x_sm_series(i, i, :)));
+    end
+    lim_mu_x_sm_error = mu_x_sm_series(end-num_samples_statistic:end,:) - x_true_series(end-num_samples_statistic:end,:);
+    sqrt_lim_mu_x_sm_error_squared_mean = mean((lim_mu_x_sm_error).^2).^0.5;
+    
+    plot(t_series,sigma_x_series,'-',t_series,sigma_x_sm_series,':',...
+         t_series,ones(size(sigma_x_series,1),1)*sqrt_lim_mu_x_error_squared_mean,'--',...
+         t_series,ones(size(sigma_x_series,1),1)*sqrt_lim_mu_x_sm_error_squared_mean,'-.');
+else
+    plot(t_series,sigma_x_series,'-',t_series,ones(size(sigma_x_series,1),1)*sqrt_lim_mu_x_error_squared_mean,'--');
+end
 set(gca, 'YScale', 'log');
 legend_list=[];
 for i=1:n_x
-    legend_list{i}=strcat('${\sigma}_{',x_string(i),'}$');
+    legend_list{end+1}=strcat('${\sigma}_{',x_string(i),'}$');
+end
+if has_sm
+    for i=1:n_x
+        legend_list{end+1}=strcat('${\sigma}^{sm}_{',x_string(i),'}$');
+    end
 end
 for i=1:n_x
-    legend_list{i+n_x}=strcat('${\mathrm{mean}((\hat{\mu}_{',x_string(i),'}-{',x_string(i),'})^2)^{\frac{1}{2}}}$');
+    legend_list{end+1}=strcat('${\mathrm{mean}((\hat{\mu}_{',x_string(i),'}-{',x_string(i),'})^2)^{\frac{1}{2}}}$');
+end
+if has_sm
+    for i=1:n_x
+        legend_list{end+1}=strcat('${\mathrm{mean}((\hat{\mu}^{sm}_{',x_string(i),'}-{',x_string(i),'})^2)^{\frac{1}{2}}}$');
+    end
 end
 legH=legend(legend_list);
 yl = ylim;
@@ -252,7 +296,7 @@ set(fig,'units','normalized');
 set(legH,'interpreter','latex','Fontsize',fontsize);
 set(titH,'interpreter','latex','Fontsize',fontsize);
 set(fig.CurrentAxes,'FontSize',fontsize);
-set(gcf,'renderer','painters');saveas(gcf,[fig_dir,'/',figname],'png');
+set(gcf,'renderer','painters');exportgraphics(gcf,[fig_dir,'/',figname,'.png']);
 %system( ['cd ',fig_dir,' ; epstopdf ',figname,'.eps ; cd ..']);
 %--------------------------------------------------------------------------
 end
