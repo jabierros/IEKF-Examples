@@ -1,9 +1,9 @@
-function [u_meas, S] = get_u(S)
+function [u_meas, TrueSystem, SimOpts] = get_u(TrueSystem, SimOpts)
 % GET_U Simulates the measured input with noise.
 %
-% [u_meas, S] = get_u(S)
+% [u_meas, TrueSystem, SimOpts] = get_u(TrueSystem, SimOpts)
 
-    u_true = S.u_true_func(S.t);
-    u_meas = u_true + S.sigma_u_true .* randn(size(u_true, 1), 1);
-    S.u_true = u_true;
+    u_true = u_true_func_(SimOpts.t);
+    u_meas = u_true + TrueSystem.sigma_u_true .* randn(size(u_true, 1), 1);
+    TrueSystem.u_true = u_true;
 end

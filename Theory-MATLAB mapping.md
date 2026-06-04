@@ -1,54 +1,87 @@
-# Theory-MATLAB Mapping Document
+# Theory-MATLAB Notation Guideline
 
-This document defines the 1-to-1 correspondence between the mathematical concepts in the Kalman Filter / Information Extended Kalman Filter (IEKF) / Information Extended Kalman Smoother (IEKS) theory and the variables used in the MATLAB codebase.
+This document defines the mathematical and programming conventions for variables, files, and functions in the Kalman Filter / Information Extended Kalman Filter (IEKF) / Information Extended Kalman Smoother (IEKS) workspace. Rather than a rigid dictionary, it serves as a compositional style guide to maintain clarity, avoid variable conflicts, and preserve exact mapping to the filter theory equations.
 
-## Variable Mapping Table
+---
 
-| **Concept** | **Theory / Math** | **MATLAB Variable (Current Step)** | **MATLAB Array (History)** |
-| :--- | :--- | :--- | :--- |
-| **Time & Params** | $t_k$, $\Delta t$, $\mathbf{p}$ | `t`, `Delta_t`, `param` | `t_series` |
-| **True Reality** | $\mathbf{x}^{tr}$, $\mathbf{z}^{tr}$, $\mathbf{u}^{tr}$ | `x_true`, `z_true`, `u_true` | `x_true_series`, `u_true_series`, `z_true_series` |
-| **Observations** | $\mathbf{z}$, $\mathbf{u}$ | `z_meas`, `u_meas` | `z_meas_series`, `u_meas_series` |
-| **Jacobians (Evaluated)** | $\mathbf{f_x}$, $\mathbf{f_u}$, $\mathbf{h_x}$, $\mathbf{h_u}$ | `f_x_`, `f_u_`, `h_x_`, `h_u_` | N/A |
-| **Noise Std. Devs** | $\sigma_{\mathbf{w}}, \sigma_{\mathbf{v}}, \sigma_{\mathbf{u}}, \sigma_{\mathbf{z}}$ | `sigma_w_x`, `sigma_v_x`, `sigma_u`, `sigma_z` | N/A |
-| **Projected Input Noise** | $\boldsymbol{\Sigma}_{\mathbf{f_u u}}^2$, $\boldsymbol{\Sigma}_{\mathbf{h_u u}}^2$ | `Sigma2_f_u_u`, `Sigma2_h_u_u` | N/A |
-| **Prediction (Source 1)** | $\hat{\boldsymbol{\mu}}_{\mathbf{x}}^{pred}$, $\mathbf{I}_{\mathbf{x}}^{pred}$, $\hat{\mathbf{i}}_{\mathbf{x}}^{pred}$ | `mu_x_pred`, `I_x_pred`, `i_x_pred` | N/A |
-| **Observation (Source 2)** | $\mathbf{I}_{\mathbf{x}}^{obs}$, $\hat{\mathbf{i}}_{\mathbf{x}}^{obs}$ | `I_x_obs`, `i_x_obs` | N/A |
-| **Aggregated Updated** | $\hat{\boldsymbol{\mu}}_{\mathbf{x}}$, $\boldsymbol{\Sigma}_{\mathbf{x}}^2$, $\mathbf{I}_{\mathbf{x}}$, $\hat{\mathbf{i}}_{\mathbf{x}}$ | `mu_x`, `Sigma2_x`, `I_x`, `i_x` | `mu_x_series`, `Sigma2_x_series`, `I_x_series` |
-| **Backward Prediction** | $\mathbf{I}_{\mathbf{x}}^{pred,bck}$, $\hat{\mathbf{i}}_{\mathbf{x}}^{pred,bck}$ | `I_x_pred_bck`, `i_x_pred_bck` | N/A |
-| **Backward Updated** | $\mathbf{I}_{\mathbf{x}}^{bck}$, $\hat{\mathbf{i}}_{\mathbf{x}}^{bck}$ | `I_x_bck`, `i_x_bck` | N/A |
-| **Smoothed Fusion** | $\hat{\boldsymbol{\mu}}_{\mathbf{x}}^{sm}$, $\boldsymbol{\Sigma}_{\mathbf{x}}^{2,sm}$, $\mathbf{I}_{\mathbf{x}}^{sm}$, $\hat{\mathbf{i}}_{\mathbf{x}}^{sm}$ | `mu_x_sm`, `Sigma2_x_sm`, `I_x_sm`, `i_x_sm` | `mu_x_sm_series`, `Sigma2_x_sm_series`, `I_x_sm_series` |
-| **Statistical Analysis** | $RMS(\epsilon_{\mathbf{x}})$ | `sqrt_lim_mu_x_error_squared_mean` | `mu_x_error_series` |
+## 1. Core Mathematical Root Names
+The primary variables in theory map to lowercase roots in MATLAB:
+* State: $\mathbf{x} \to$ `x`
+* Measurement / Output: $\mathbf{z} \to$ `z`
+* Control / Input: $\mathbf{u} \to$ `u`
+* Process Transition Function: $\mathbf{f} \to$ `f`
+* Measurement Function: $\mathbf{h} \to$ `h`
+* Continuous Derivative Function: $\dot{\mathbf{x}} \to$ `dstate`
 
-## Notation Details & Conceptual Separations
+---
 
-### 1. Symbolic Notation (`x_`, `u_`, `z_`)
-* In the symbolic script [main_symbolic_EKF.m](file:///home/jros/Sync/Kalman/IEKF-Examples/Double_Pendulum/main_symbolic_EKF.m), `x_` is used for the symbolic state vector (instead of `x`, to avoid naming conflicts with spatial coordinates).
-* To be fully coherent, the symbolic input vector is named `u_` and exported functions are generated using the variables list `{x_, u_, t, param}` or `{x_true, u_true, t, param_true}`.
+## 2. Capitalization for Dimensionality (Matrices vs. Vectors/Scalars)
+Casing distinguishes vectors or scalars from matrices and operators:
+* **Lowercase (`sigma`, `mu`, `i`):** Used for vectors or scalars.
+  * E.g., `sigma_w` is the standard deviation *vector* of the process noise.
+  * E.g., `mu_x` is the state mean *vector* $\boldsymbol{\mu}_{\mathbf{x}}$.
+  * E.g., `i_x` is the information *vector* $\mathbf{i}_{\mathbf{x}}$.
+* **Capitalized (`Sigma`, `I`):** Used for matrices.
+  * E.g., `Sigma_w` is the Cholesky *matrix* factor $\boldsymbol{\Sigma}_{\mathbf{w}}$.
+  * E.g., `Sigma2_w` is the covariance *matrix* $\boldsymbol{\Sigma}_{\mathbf{w}}^2 = \boldsymbol{\Sigma}_{\mathbf{w}}\boldsymbol{\Sigma}_{\mathbf{w}}^\top$.
+  * E.g., `I_x` is the Information *matrix* $\mathbf{I}_{\mathbf{x}}$.
 
-### 2. True vs. Filter Continuous Models
-We conceptually split continuous system modeling:
-* `dstate` represents the continuous system derivative model used in the filter (e.g. for discretization in the prediction step). It depends on `param`.
-* `dstate_true` represents the true system derivative model used to simulate reality (integrated via `ode45`). It depends on `param_true` and uses `x_true` and `u_true` symbolic coordinates (which are coincident with `x_` and `u_` in the symbolic derivation).
+---
 
-### 3. Measurements Prefix (`_meas`)
-* Variables representing observations/measurements are suffixed with `_meas` (e.g. `u_meas`, `z_meas`, `u_meas_series`, `z_meas_series`) to clearly delineate them from states or true physical properties.
+## 3. Compositional Suffix/Modifier System
+Variable names are constructed by appending suffixes to core roots:
+$$\text{MATLAB Name} = \langle\text{Root}\rangle\_[\text{State/Type}]\_[\text{Step/Epoch}]\_[\text{History}]$$
 
-### 4. Two-Filter Smoothing Notation (`_bck` and `_sm`)
-* Variables associated with the backward filter pass are suffixed with `_bck` (for updated) or `_pred_bck` (for predicted back in time).
-* Smoothed variables resulting from the fusion of the forward updated and backward predicted information are suffixed with `_sm` (e.g., `mu_x_sm`, `Sigma2_x_sm`).
+### State / Type Suffixes
+* `_true`: True physical value (in simulation).
+  * *Note on Epistemology:* In the physical simulation, the actual state/measurement/input representing reality are named `x_true`, `z_true`, `u_true`. These represent the true reality and are inaccessible to the filter. Functions and parameters without `_true` represent the internal model of the filter, allowing simulation of reality-model discrepancies (e.g. model mismatch).
+* `_meas`: Sensor readings / measurements (accessible to the filter), e.g. `z_meas`, `u_meas`.
+* `_pred`: Predicted value (prior), e.g., `mu_x_pred`, `Sigma2_x_pred`.
+* `_obs`: Measurement update component (observation info), e.g., `I_x_obs`, `i_x_obs`.
+* `_bck`: Backward pass, e.g., `I_x_bck`, `i_x_bck`.
+* `_pred_bck`: Backward prediction, e.g., `I_x_pred_bck`, `i_x_pred_bck`.
+* `_sm`: Smoothed value, e.g., `mu_x_sm`, `Sigma2_x_sm`.
+* `_error`: Statistical discrepancy or error, e.g., `mu_x_error`.
 
-### 5. Iterated Smoothing (IIEKS)
-* Unlike the standard EKS/IEKS which linearizes once along the forward trajectory, the Iterated Information Extended Kalman Smoother (IIEKS) performs multiple forward-backward optimization passes.
-* In each iteration, both the nominal forward pass and the backward pass equations are linearized (evaluating process and measurement Jacobians) around the *latest smoothed trajectory* $\hat{\boldsymbol{\mu}}_{\mathbf{x}}^{sm}$ from the previous iteration. This centers the Taylor series expansions closer to the true states, reducing linearization error and improving the marginal log-likelihood.
+### Step / Epoch Suffixes
+Sequence indexes in time loops are denoted with subindexes:
+* `_k`: Step $k$, e.g., `u_meas_k`, `mu_x_k`.
+* `_kp1`: Step $k+1$, e.g., `u_meas_kp1`, `mu_x_kp1`.
+* `_km1`: Step $k-1$, e.g., `u_meas_km1`, `mu_x_km1`.
+* `_prev` and `_next`: Local variable overrides used strictly inside step-level functions (like `IEKF_step.m` or `IEKS_step.m`) where there is no loop index `k` and the inputs/outputs must be disambiguated.
 
-### 6. Architectural Structure & Likelihood Option
-* **Pass-level vs. Step-level Functions:**
-  * `IEKF.m` and `IEKS.m` are **pass-level** functions that run the entire trajectory forward or backward and return/store history in the `Simulation` struct.
-  * `IEKF_step.m` and `IEKS_step.m` are **step-level** functions that run the filtering/smoothing equations for a single time step $k$. They encapsulate the mathematical formulas (prediction, update, fusion) cleanly.
-* **Log-Likelihood Smoother Options:**
-  * The negative log-likelihood/joint energy can be computed with various settings using `S.smoother_in_likelihood`:
-    * `'none'`: Forward prediction error loop using `IEKF_step(S)` (standard log-likelihood).
-    * `'IEKS'`: Full pass via `IEKF`, smoothed pass via `IEKS`, and evaluation of the joint state-measurement negative log-likelihood (energy) of the smoothed trajectory.
-    * `'IIEKS'`: Full pass via `IEKF`, iterated smoothed pass via `IIEKS`, and evaluation of the joint negative log-likelihood (energy) of the iterated smoothed trajectory.
+### History Suffixes
+* `_series`: A logged time-series collection of a variable, e.g., `mu_x_series`, `mu_x_error_series`.
 
+---
+
+## 4. Function File Names vs. Evaluated Variables
+To avoid MATLAB naming conflicts when calling a function and storing its return value, we append a trailing underscore (`_`) to the **exported function file names**.
+This allows the local variables holding their evaluated values to match the exact mathematical symbols:
+
+| Mathematical Concept | Function File | Evaluation in Code |
+| :--- | :--- | :--- |
+| Process Transition $\mathbf{f}$ | `f_.m` | `f = f_(x, u, t, param, Delta_t)` |
+| Process Jacobian $\mathbf{f_x}$ | `f_x_.m` | `f_x = f_x_(x, u, t, param, Delta_t)` |
+| Process Control Jacobian $\mathbf{f_u}$ | `f_u_.m` | `f_u = f_u_(x, u, t, param, Delta_t)` |
+| Measurement Function $\mathbf{h}$ | `h_.m` | `h = h_(x, u, t, param)` |
+| Measurement Jacobian $\mathbf{h_x}$ | `h_x_.m` | `h_x = h_x_(x, u, t, param)` |
+| Measurement Control Jacobian $\mathbf{h_u}$ | `h_u_.m` | `h_u = h_u_(x, u, t, param)` |
+| Continuous Derivative $\dot{\mathbf{x}}$ | `dstate_` | `dstate = dstate_(x, u, t, param)` |
+| Continuous Jacobian $\dot{\mathbf{x}}_{\mathbf{x}}$ | `dstate_x_` | `dstate_x = dstate_x_(x, u, t, param)` |
+| True Reality Derivative | `dstate_true_` | `dstate_true = dstate_true_(x, u, t, param)` |
+| True Reality Measurement | `h_true_` | `h_true = h_true_(x, u, t, param)` |
+| True Input Function | `u_true_func_` | `u_true = u_true_func_(t)` |
+
+*Note:* Evaluated variables can still be combined with step-based modifiers as needed, e.g., `f_x_k = f_x_(mu_x_k, ...)` or `f_pred = f_(...)`.
+
+---
+
+## 5. Architectural Conventions
+* **Pass-Level vs. Step-Level Separation:**
+  * `IEKF.m` and `IEKS.m` are **pass managers** that handle state arrays over a trajectory and return logged results.
+  * `IEKF_step.m` and `IEKS_step.m` are **step functions** evaluating the filter/smoother math on flat vectors/matrices at a single instant in time.
+* **Decoupled Structs:**
+  * `KF`: Filter parameters (`param`, `Delta_t`, noise Cholesky factors like `Sigma_w`).
+  * `TrueSystem`: True physical reality settings (`param_true`, `x_true_0`, noise std `sigma_u_true`, `sigma_z_true`).
+  * `SimOpts`: Time tracker (`t_0`, `t_end`, `t`, `t_prev`).

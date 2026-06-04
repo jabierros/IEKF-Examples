@@ -7,7 +7,7 @@ syms t...
      theta1 dtheta1 ddtheta1...
      theta2 dtheta2 ddtheta2...
      m1 m2 l1 l2 g Delta_t     real
-param=[m1 m2 l1 l2 g Delta_t]';
+param=[m1 m2 l1 l2 g]';
 param_true=param;
 %% 
 
@@ -88,14 +88,14 @@ x_true=x_;
 u_true=u_;
 dstate_true=dstate;
 
-matlabFunction(f,'file','f','vars',{x_, u_, t, param});
-matlabFunction(f_x,'file','f_x','vars',{x_, u_, t, param});
-matlabFunction(f_u,'file','f_u','vars',{x_, u_, t, param});
-matlabFunction(h,'file','h','vars',{x_, u_, t, param});
-matlabFunction(h_x,'file','h_x','vars',{x_, u_, t, param});
-matlabFunction(h_u,'file','h_u','vars',{x_, u_, t, param});
-matlabFunction(h_true,'file','h_true','vars',{x_true, u_true, t, param_true});
-matlabFunction(dstate,'file','dstate','vars',{x_, u_, t, param});
-matlabFunction(dstate_x,'file','dstate_x','vars',{x_, u_, t, param});
-matlabFunction(dstate_true,'file','dstate_true','vars',{x_true, u_true, t, param_true});
-matlabFunction(u_true,'file','u_true_func','vars',{t});
+matlabFunction(f,'file','f_','vars',{x_, u_, t, param, Delta_t});
+matlabFunction(f_x,'file','f_x_','vars',{x_, u_, t, param, Delta_t});
+matlabFunction(f_u,'file','f_u_','vars',{x_, u_, t, param, Delta_t});
+matlabFunction(h,'file','h_','vars',{x_, u_, t, param});
+matlabFunction(h_x,'file','h_x_','vars',{x_, u_, t, param});
+matlabFunction(h_u,'file','h_u_','vars',{x_, u_, t, param});
+matlabFunction(h_true,'file','h_true_','vars',{x_true, u_true, t, param_true});
+matlabFunction(dstate,'file','dstate_','vars',{x_, u_, t, param});
+matlabFunction(dstate_x,'file','dstate_x_','vars',{x_, u_, t, param});
+matlabFunction(dstate_true,'file','dstate_true_','vars',{x_true, u_true, t, param_true});
+matlabFunction(u_true,'file','u_true_func_','vars',{t});

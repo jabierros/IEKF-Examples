@@ -1,11 +1,11 @@
-function Plotting(fig_dir, Simulation, S)
-t_0 = S.t_0;
-t_end = S.t_end;
-x_true_0 = S.x_true_0;
-param = S.param;
-x_string = S.x_string;
-u_string = S.u_string;
-z_string = S.z_string;
+function Plotting(fig_dir, FilterResults, KF, TrueSystem, SimOpts)
+t_0 = SimOpts.t_0;
+t_end = SimOpts.t_end;
+x_true_0 = TrueSystem.x_true_0;
+param = KF.param;
+x_string = KF.x_string;
+u_string = KF.u_string;
+z_string = KF.z_string;
 
 [mkdir_success,mkdir_message]=mkdir(fig_dir);
 
@@ -14,7 +14,7 @@ set(groot, 'defaultLegendInterpreter','latex');
 
 fontsize=12;
 
-unpack_simulation(Simulation);
+unpack_simulation(FilterResults);
 
 mu_x_error_series=mu_x_series-x_true_series;
 %--------------------------------------------------------------------------
@@ -42,7 +42,7 @@ x_discr_series=[];
 x_=x_true_0;
 for k=1:length(t_series)
  x_discr_series=[x_discr_series,x_];
- x_=f(x_, u_true_series(k,:)', t_series(k),param);
+ x_=f_(x_, u_true_series(k,:)', t_series(k),param,KF.Delta_t);
 end
 
 figIdx = figIdx + 1;
@@ -65,7 +65,7 @@ set(gcf,'renderer','painters');exportgraphics(gcf,[fig_dir,'/',figname,'.png']);
 %--------------------------------------------------------------------------
 pred_error_series=zeros(size(x_true_series,2),size(t_series,1));
 for k=1:size(t_series,1)-1
-    pred_error_series(:,k+1)=abs((f(x_true_series(k,:)',u_true_series(k,:)',t_series(k,:)',param)-x_true_series(k,:)')-(x_true_series(k+1,:)'-x_true_series(k,:)'));
+    pred_error_series(:,k+1)=abs((f_(x_true_series(k,:)',u_true_series(k,:)',t_series(k,:)',param,KF.Delta_t)-x_true_series(k,:)')-(x_true_series(k+1,:)'-x_true_series(k,:)'));
 end
 pred_error_series=pred_error_series';
 

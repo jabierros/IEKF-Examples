@@ -6,15 +6,8 @@ cd(fileparts(matlab.desktop.editor.getActiveFilename)); % In a .mlx file uncomme
 %% Solution:
 % Parameters and initial state definition
 
-%% 
-% Define handle to function determining the actual input
-
-u_true_func = @u_true_func;
-%% 
-
 seed=1789; rng(seed);
 rng_status=rng;
-%% 
 
 % Set Initial time
 
@@ -53,7 +46,7 @@ Sigma2_x_0 = diag(sigma_x_0.^2); % assumed diagonal @ t=t_0
 %% 
 % Model equation error variance $\sigma^2_{u_{k}}$ and $\sigma^2_{w_k}$
 
-n_u=size(u_true_func(t_0),1);
+n_u=size(u_true_func_(t_0),1);
 sigma_u_true=zeros(n_u,1);
 sigma_u=zeros(n_u,1); %input meas. cov. assumed diagonal
 
@@ -66,7 +59,7 @@ max_error_discr=[2.58418e-06, 3.025e-06, 1.08183e-05, 2.12142e-05]';
 % Process equation error std $\mathbf{\sigma}_{\mathbf{w}_{k}}$.
 
 n_x=size(x_true_0,1);
-sigma_w_x=max_error_discr; % Discretization error is the process noise source in this example
+sigma_w=max_error_discr; % Discretization error is the process noise source in this example
 %% 
 
 sigma_gyroy_true=0.1;%rad/s
@@ -83,70 +76,71 @@ sigma_z=[sigma_gyroy_spec,sigma_accx_spec,sigma_accz_spec]';
 % Sensor equation error std $\mathbf{\sigma}_{\mathbf{v}_{k+1}}$.
 
 n_z=size(sigma_z_true,1);
-sigma_v_x=zeros(n_z,1);
+sigma_v=zeros(n_z,1);
 
-% Define and initialize the state struct S
-S = struct();
-S.t_0 = t_0;
-S.Delta_t = Delta_t;
-S.t_end = t_end;
-S.t = t_0;
-S.t_prev = t_0;
-S.param = param;
-S.param_true = param_true;
-S.x_true_0 = x_true_0;
-S.x_true = x_true_0;
-S.x_true_prev = x_true_0;
-S.mu_x_0 = mu_x_0;
-S.mu_x = mu_x_0;
-S.sigma_x_0 = sigma_x_0;
-S.Sigma2_x_0 = Sigma2_x_0;
-S.Sigma2_x = Sigma2_x_0;
-S.sigma_u_true = sigma_u_true;
-S.sigma_z_true = sigma_z_true;
-S.sigma_u = sigma_u;
-S.sigma_z = sigma_z;
-S.sigma_w_x = sigma_w_x;
-S.sigma_v_x = sigma_v_x;
-S.u_true_func = u_true_func;
+% Define and initialize the separate configurations and states
+SimOpts = struct();
+SimOpts.t_0 = t_0;
+SimOpts.t_end = t_end;
+SimOpts.t = t_0;
+SimOpts.t_prev = t_0;
+
+KF = struct();
+KF.Delta_t = Delta_t;
+KF.param = param;
+KF.mu_x_0 = mu_x_0;
+KF.sigma_x_0 = sigma_x_0;
+KF.Sigma_w = diag(sigma_w);
+KF.Sigma_v = diag(sigma_v);
+KF.Sigma_u = diag(sigma_u);
+KF.Sigma_z = diag(sigma_z);
+
+TrueSystem = struct();
+TrueSystem.param_true = param_true;
+TrueSystem.x_true_0 = x_true_0;
+TrueSystem.x_true = x_true_0;
+TrueSystem.x_true_prev = x_true_0;
+TrueSystem.sigma_u_true = sigma_u_true;
+TrueSystem.sigma_z_true = sigma_z_true;
 
 datalogging_string={'t';'x_true';'mu_x';'Sigma2_x';'u_true';'u_meas';'z_true';'z_meas';'sigma_x'};
 
 %% Kalman Filter Loop (Initial)
 % Reset random number generator and run simulation
 rng(rng_status);
-Simulation = IEKF(S, datalogging_string);
-Simulation = IEKS(Simulation, S);
-% Simulation = IIEKS(Simulation, S, 4);
+FilterResults = IEKF(KF, TrueSystem, SimOpts, datalogging_string);
+FilterResults = IEKS(FilterResults, KF, SimOpts);
+% FilterResults = IIEKS(FilterResults, KF, SimOpts, 4);
 
 %% Observability
 % Linear observability near the end of the simulation
-[u_meas_tmp, S] = get_u(S); [z_meas_tmp, S] = get_z(S);
-f_x_=f_x(S.mu_x, u_meas_tmp, S.t, S.param);
-h_x_=h_x(S.mu_x, u_meas_tmp, S.t, S.param);
+[u_meas_tmp, TrueSystem, SimOpts] = get_u(TrueSystem, SimOpts); 
+[z_meas_tmp, TrueSystem, SimOpts] = get_z(TrueSystem, SimOpts);
+f_x_val=f_x_(FilterResults.data.mu_x{end}, u_meas_tmp, SimOpts.t, KF.param, KF.Delta_t);
+h_x_val=h_x_(FilterResults.data.mu_x{end}, u_meas_tmp, SimOpts.t, KF.param);
  
-OB=obsv(f_x_,h_x_);
+OB=obsv(f_x_val,h_x_val);
 rank(OB)
 size(OB) 
 %% 
 % Nonlinear observability near the end of the simulation
-unpack_simulation(Simulation);
+unpack_simulation(FilterResults);
 %% 
 % Nonlinear observabilty matrix must be bigger (more rows) than the linear one. 
 % So 5 time steps must suffice ( $5 \times 2=10>8$ )
 
 k=length(t_series)-5;
 
-OB=[h_x(x_true_series(k,:)',u_meas_series(k,:)',t_series(k,:),param)
-    h_x(x_true_series(k+1,:)',u_meas_series(k+1,:)',t_series(k+1,:),param)*f_x(x_true_series(k+1,:)',u_meas_series(k+1,:)',t_series(k+1,:),param)
-    h_x(x_true_series(k+2,:)',u_meas_series(k+2,:)',t_series(k+2,:),param)*f_x(x_true_series(k+2,:)',u_meas_series(k+2,:)',t_series(k+2,:),param)*f_x(x_true_series(k+1,:)',u_meas_series(k+1,:)',t_series(k+1,:),param)
-    h_x(x_true_series(k+3,:)',u_meas_series(k+3,:)',t_series(k+3,:),param)*f_x(x_true_series(k+3,:)',u_meas_series(k+3,:)',t_series(k+3,:),param)*f_x(x_true_series(k+2,:)',u_meas_series(k+2,:)',t_series(k+2,:),param)*f_x(x_true_series(k+1,:)',u_meas_series(k+1,:)',t_series(k+1,:),param)
-    h_x(x_true_series(k+4,:)',u_meas_series(k+4,:)',t_series(k+4,:),param)*f_x(x_true_series(k+4,:)',u_meas_series(k+4,:)',t_series(k+4,:),param)*f_x(x_true_series(k+3,:)',u_meas_series(k+3,:)',t_series(k+3,:),param)*f_x(x_true_series(k+2,:)',u_meas_series(k+2,:)',t_series(k+2,:),param)*f_x(x_true_series(k+1,:)',u_meas_series(k+1,:)',t_series(k+1,:),param)];
+OB=[h_x_(x_true_series(k,:)',u_meas_series(k,:)',t_series(k,:),param)
+    h_x_(x_true_series(k+1,:)',u_meas_series(k+1,:)',t_series(k+1,:),param)*f_x_(x_true_series(k+1,:)',u_meas_series(k+1,:)',t_series(k+1,:),param,KF.Delta_t)
+    h_x_(x_true_series(k+2,:)',u_meas_series(k+2,:)',t_series(k+2,:),param)*f_x_(x_true_series(k+2,:)',u_meas_series(k+2,:)',t_series(k+2,:),param,KF.Delta_t)*f_x_(x_true_series(k+1,:)',u_meas_series(k+1,:)',t_series(k+1,:),param,KF.Delta_t)
+    h_x_(x_true_series(k+3,:)',u_meas_series(k+3,:)',t_series(k+3,:),param)*f_x_(x_true_series(k+3,:)',u_meas_series(k+3,:)',t_series(k+3,:),param,KF.Delta_t)*f_x_(x_true_series(k+2,:)',u_meas_series(k+2,:)',t_series(k+2,:),param,KF.Delta_t)*f_x_(x_true_series(k+1,:)',u_meas_series(k+1,:)',t_series(k+1,:),param,KF.Delta_t)
+    h_x_(x_true_series(k+4,:)',u_meas_series(k+4,:)',t_series(k+4,:),param)*f_x_(x_true_series(k+4,:)',u_meas_series(k+4,:)',t_series(k+4,:),param,KF.Delta_t)*f_x_(x_true_series(k+3,:)',u_meas_series(k+3,:)',t_series(k+3,:),param,KF.Delta_t)*f_x_(x_true_series(k+2,:)',u_meas_series(k+2,:)',t_series(k+2,:),param,KF.Delta_t)*f_x_(x_true_series(k+1,:)',u_meas_series(k+1,:)',t_series(k+1,:),param,KF.Delta_t)];
 rank(OB)
 clear *_series
 %% Real filter error statistics in the limit when $k \longrightarrow \infty$
 
-unpack_simulation(Simulation);
+unpack_simulation(FilterResults);
 mu_x_error_series=mu_x_series-x_true_series;
 num_samples_statistic=100;
 lim_mu_x_error=mu_x_error_series(end-num_samples_statistic:end,:);
@@ -161,13 +155,13 @@ x_string=[q_string; dq_string];
 u_string=[];
 z_string=["\omega_y";"a_x";"a_z"];
 
-S.x_string = x_string;
-S.u_string = u_string;
-S.z_string = z_string;
+KF.x_string = x_string;
+KF.u_string = u_string;
+KF.z_string = z_string;
 
-unpack_simulation(Simulation);
+unpack_simulation(FilterResults);
 fig_dir=['IEKF_',num2str(Delta_t)];
-Plotting(fig_dir, Simulation, S);
+Plotting(fig_dir, FilterResults, KF, TrueSystem, SimOpts);
 
 %% Stop the code so user takes control
 return;
@@ -175,33 +169,36 @@ return;
 %% Maximum Likelihood (ML) Estimation of Filter Parameters (Opt 1) - Run Optimization
 % Run this section manually to search for parameters.
 
-theta_=[S.sigma_w_x];
-fun = @(theta_) logL_IEKF(update_struct(S, 'sigma_w_x', theta_));
+theta_=[sigma_w];
+fun = @(theta_) logL_IEKF(update_struct(KF, 'sigma_w', theta_), TrueSystem, SimOpts);
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_, options);
 title('$LogML$','Interpreter','latex');
 xlabel('Iteration','Interpreter','latex');
 ylabel('$LogML$ value','Interpreter','latex');
 
-sigma_w_x=theta_(1:n_x);
-sigma_z=S.sigma_z;
-sigma_u=S.sigma_u;
-save('ML_opt_1','sigma_w_x','sigma_z','sigma_u');
+sigma_w=theta_(1:n_x);
+sigma_z=diag(KF.Sigma_z);
+sigma_u=diag(KF.Sigma_u);
+save('ML_opt_1','sigma_w','sigma_z','sigma_u');
 
 %% Load Optimization Results & Run Filter (Opt 1)
 load('ML_opt_1');
-S.sigma_w_x = sigma_w_x;
-S.sigma_z = sigma_z;
-S.sigma_u = sigma_u;
+if exist('sigma_w_x', 'var') && ~exist('sigma_w', 'var')
+    sigma_w = sigma_w_x;
+end
+KF.Sigma_w = diag(sigma_w);
+KF.Sigma_z = diag(sigma_z);
+KF.Sigma_u = diag(sigma_u);
 
 %% Kalman Filter Loop (Opt 1)
 rng(rng_status);
-Simulation = IEKF(S, datalogging_string);
-Simulation = IEKS(Simulation, S);
-% Simulation = IIEKS(Simulation, S, 4);
+FilterResults = IEKF(KF, TrueSystem, SimOpts, datalogging_string);
+FilterResults = IEKS(FilterResults, KF, SimOpts);
+% FilterResults = IIEKS(FilterResults, KF, SimOpts, 4);
 
 %% Real filter error statistics (Opt 1)
-unpack_simulation(Simulation);
+unpack_simulation(FilterResults);
 mu_x_error_series=mu_x_series-x_true_series;
 num_samples_statistic=100;
 lim_mu_x_error=mu_x_error_series(end-num_samples_statistic:end,:);
@@ -210,7 +207,7 @@ lim_mu_x_error_std=std(lim_mu_x_error);
 sqrt_lim_mu_x_error_squared_mean=mean((lim_mu_x_error).^2).^0.5;
 
 %% Plotting (Opt 1)
-Plotting(fig_dir, Simulation, S);
+Plotting(fig_dir, FilterResults, KF, TrueSystem, SimOpts);
 
 %% Stop the code so user takes control
 return;
@@ -218,37 +215,40 @@ return;
 %% Maximum Likelihood (ML) Estimation of Filter Parameters (Opt 2) - Run Optimization
 % Run this section manually to search for parameters.
 
-theta_=[S.sigma_w_x; S.sigma_z; S.sigma_u];
-fun = @(theta_) logL_IEKF(update_struct(S, ...
-    'sigma_w_x', theta_(1:n_x), ...
+theta_=[sigma_w; diag(KF.Sigma_z); diag(KF.Sigma_u)];
+fun = @(theta_) logL_IEKF(update_struct(KF, ...
+    'sigma_w', theta_(1:n_x), ...
     'sigma_z', theta_(n_x+1:n_x+n_z), ...
-    'sigma_u', theta_(n_x+n_z+1:n_x+n_z+n_u)));
+    'sigma_u', theta_(n_x+n_z+1:n_x+n_z+n_u)), TrueSystem, SimOpts);
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_, options);
 
-sigma_w_x=theta_(1:n_x);
+sigma_w=theta_(1:n_x);
 sigma_z=theta_(n_x+1:n_x+n_z);
 sigma_u=theta_(n_x+n_z+1:n_x+n_z+n_u);
 
 title('$LogML$','Interpreter','latex');
 xlabel('Iteration','Interpreter','latex');
 ylabel('$LogML$ value','Interpreter','latex');
-save('ML_opt_2','sigma_w_x','sigma_z','sigma_u');
+save('ML_opt_2','sigma_w','sigma_z','sigma_u');
 
 %% Load Optimization Results & Run Filter (Opt 2)
 load('ML_opt_2');
-S.sigma_w_x = sigma_w_x;
-S.sigma_z = sigma_z;
-S.sigma_u = sigma_u;
+if exist('sigma_w_x', 'var') && ~exist('sigma_w', 'var')
+    sigma_w = sigma_w_x;
+end
+KF.Sigma_w = diag(sigma_w);
+KF.Sigma_z = diag(sigma_z);
+KF.Sigma_u = diag(sigma_u);
 
 %% Kalman Filter Loop (Opt 2)
 rng(rng_status);
-Simulation = IEKF(S, datalogging_string);
-Simulation = IEKS(Simulation, S);
-% Simulation = IIEKS(Simulation, S, 4);
+FilterResults = IEKF(KF, TrueSystem, SimOpts, datalogging_string);
+FilterResults = IEKS(FilterResults, KF, SimOpts);
+% FilterResults = IIEKS(FilterResults, KF, SimOpts, 4);
 
 %% Real filter error statistics (Opt 2)
-unpack_simulation(Simulation);
+unpack_simulation(FilterResults);
 mu_x_error_series=mu_x_series-x_true_series;
 num_samples_statistic=100;
 lim_mu_x_error=mu_x_error_series(end-num_samples_statistic:end,:);
@@ -257,7 +257,7 @@ lim_mu_x_error_std=std(lim_mu_x_error);
 sqrt_lim_mu_x_error_squared_mean=mean((lim_mu_x_error).^2).^0.5;
 
 %% Plotting (Opt 2)
-Plotting(fig_dir, Simulation, S);
+Plotting(fig_dir, FilterResults, KF, TrueSystem, SimOpts);
 
 %% Stop the code so user takes control
 return;
@@ -265,43 +265,45 @@ return;
 %% Maximum Likelihood (ML) Estimation of Filter Parameters (Opt 3) - Run Optimization
 % Run this section manually to search for parameters.
 
-theta_=[S.sigma_w_x; S.sigma_z; S.sigma_u; S.mu_x_0; S.sigma_x_0];
-fun = @(theta_) logL_IEKF(update_struct(S, ...
-    'sigma_w_x', theta_(1:n_x), ...
+theta_=[sigma_w; diag(KF.Sigma_z); diag(KF.Sigma_u); KF.mu_x_0; KF.sigma_x_0];
+fun = @(theta_) logL_IEKF(update_struct(KF, ...
+    'sigma_w', theta_(1:n_x), ...
     'sigma_z', theta_(n_x+1:n_x+n_z), ...
     'sigma_u', theta_(n_x+n_z+1:n_x+n_z+n_u), ...
     'mu_x_0', theta_(n_x+n_z+n_u+1:n_x+n_z+n_u+n_x), ...
-    'sigma_x_0', theta_(n_x+n_z+n_u+n_x+1:n_x+n_z+n_u+n_x+n_x)));
+    'sigma_x_0', theta_(n_x+n_z+n_u+n_x+1:n_x+n_z+n_u+n_x+n_x)), TrueSystem, SimOpts);
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_, options);
 title('$LogML$','Interpreter','latex');
 xlabel('Iteration','Interpreter','latex');
 ylabel('$LogML$ value','Interpreter','latex');
 
-sigma_w_x=theta_(1:n_x);
+sigma_w=theta_(1:n_x);
 sigma_z=theta_(n_x+1:n_x+n_z);
 sigma_u=theta_(n_x+n_z+1:n_x+n_z+n_u);
 mu_x_0=theta_(n_x+n_z+n_u+1:n_x+n_z+n_u+n_x);
 sigma_x_0=theta_(n_x+n_z+n_u+n_x+1:n_x+n_z+n_u+n_x+n_x);
-save('ML_opt_3','sigma_w_x','sigma_z','sigma_u','mu_x_0','sigma_x_0');
+save('ML_opt_3','sigma_w','sigma_z','sigma_u','mu_x_0','sigma_x_0');
 
 %% Load Optimization Results & Run Filter (Opt 3)
 load('ML_opt_3');
-S.sigma_w_x = sigma_w_x;
-S.sigma_z = sigma_z;
-S.sigma_u = sigma_u;
-S.mu_x_0 = mu_x_0;
-S.sigma_x_0 = sigma_x_0;
-S.Sigma2_x_0 = diag(sigma_x_0.^2);
+if exist('sigma_w_x', 'var') && ~exist('sigma_w', 'var')
+    sigma_w = sigma_w_x;
+end
+KF.Sigma_w = diag(sigma_w);
+KF.Sigma_z = diag(sigma_z);
+KF.Sigma_u = diag(sigma_u);
+KF.mu_x_0 = mu_x_0;
+KF.sigma_x_0 = sigma_x_0;
 
 %% Kalman Filter Loop (Opt 3)
 rng(rng_status);
-Simulation = IEKF(S, datalogging_string);
-Simulation = IEKS(Simulation, S);
-% Simulation = IIEKS(Simulation, S, 4);
+FilterResults = IEKF(KF, TrueSystem, SimOpts, datalogging_string);
+FilterResults = IEKS(FilterResults, KF, SimOpts);
+% FilterResults = IIEKS(FilterResults, KF, SimOpts, 4);
 
 %% Real filter error statistics (Opt 3)
-unpack_simulation(Simulation);
+unpack_simulation(FilterResults);
 mu_x_error_series=mu_x_series-x_true_series;
 num_samples_statistic=100;
 lim_mu_x_error=mu_x_error_series(end-num_samples_statistic:end,:);
@@ -310,7 +312,7 @@ lim_mu_x_error_std=std(lim_mu_x_error);
 sqrt_lim_mu_x_error_squared_mean=mean((lim_mu_x_error).^2).^0.5;
 
 %% Plotting (Opt 3)
-Plotting(fig_dir, Simulation, S);
+Plotting(fig_dir, FilterResults, KF, TrueSystem, SimOpts);
 
 %% Stop the code so user takes control
 return;
@@ -318,19 +320,19 @@ return;
 %% Maximum Likelihood (ML) Estimation of Filter & Model Parameters (Opt 4) - Run Optimization
 % Run this section manually to search for parameters.
 
-theta_=[S.sigma_w_x; S.sigma_z; S.sigma_u; S.mu_x_0; S.sigma_x_0; S.param];
-fun = @(theta_) logL_IEKF(update_struct(S, ...
-    'sigma_w_x', theta_(1:n_x), ...
+theta_=[sigma_w; diag(KF.Sigma_z); diag(KF.Sigma_u); KF.mu_x_0; KF.sigma_x_0; KF.param];
+fun = @(theta_) logL_IEKF(update_struct(KF, ...
+    'sigma_w', theta_(1:n_x), ...
     'sigma_z', theta_(n_x+1:n_x+n_z), ...
     'sigma_u', theta_(n_x+n_z+1:n_x+n_z+n_u), ...
     'mu_x_0', theta_(n_x+n_z+n_u+1:n_x+n_z+n_u+n_x), ...
     'sigma_x_0', theta_(n_x+n_z+n_u+n_x+1:n_x+n_z+n_u+n_x+n_x), ...
-    'param', theta_(n_x+n_z+n_u+n_x+n_x+1 : end)));
+    'param', theta_(n_x+n_z+n_u+n_x+n_x+1 : end)), TrueSystem, SimOpts);
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_, options);
 
-n_param = length(S.param);
-sigma_w_x=theta_(1:n_x);
+n_param = length(KF.param);
+sigma_w=theta_(1:n_x);
 sigma_z=theta_(n_x+1:n_x+n_z);
 sigma_u=theta_(n_x+n_z+1:n_x+n_z+n_u);
 mu_x_0=theta_(n_x+n_z+n_u+1:n_x+n_z+n_u+n_x);
@@ -340,26 +342,28 @@ param=theta_(n_x+n_z+n_u+n_x+n_x+1 : n_x+n_z+n_u+n_x+n_x+n_param);
 title('$LogML$ with Model Params','Interpreter','latex');
 xlabel('Iteration','Interpreter','latex');
 ylabel('$LogML$ value','Interpreter','latex');
-save('ML_opt_4','sigma_w_x','sigma_z','sigma_u','mu_x_0','sigma_x_0','param');
+save('ML_opt_4','sigma_w','sigma_z','sigma_u','mu_x_0','sigma_x_0','param');
 
 %% Load Optimization Results & Run Filter (Opt 4)
 load('ML_opt_4');
-S.sigma_w_x = sigma_w_x;
-S.sigma_z = sigma_z;
-S.sigma_u = sigma_u;
-S.mu_x_0 = mu_x_0;
-S.sigma_x_0 = sigma_x_0;
-S.Sigma2_x_0 = diag(sigma_x_0.^2);
-S.param = param;
+if exist('sigma_w_x', 'var') && ~exist('sigma_w', 'var')
+    sigma_w = sigma_w_x;
+end
+KF.Sigma_w = diag(sigma_w);
+KF.Sigma_z = diag(sigma_z);
+KF.Sigma_u = diag(sigma_u);
+KF.mu_x_0 = mu_x_0;
+KF.sigma_x_0 = sigma_x_0;
+KF.param = param;
 
 %% Kalman Filter Loop (Opt 4)
 rng(rng_status);
-Simulation = IEKF(S, datalogging_string);
-Simulation = IEKS(Simulation, S);
-% Simulation = IIEKS(Simulation, S, 4);
+FilterResults = IEKF(KF, TrueSystem, SimOpts, datalogging_string);
+FilterResults = IEKS(FilterResults, KF, SimOpts);
+% FilterResults = IIEKS(FilterResults, KF, SimOpts, 4);
 
 %% Real filter error statistics (Opt 4)
-unpack_simulation(Simulation);
+unpack_simulation(FilterResults);
 mu_x_error_series=mu_x_series-x_true_series;
 num_samples_statistic=100;
 lim_mu_x_error=mu_x_error_series(end-num_samples_statistic:end,:);
@@ -368,13 +372,20 @@ lim_mu_x_error_std=std(lim_mu_x_error);
 sqrt_lim_mu_x_error_squared_mean=mean((lim_mu_x_error).^2).^0.5;
 
 %% Plotting (Opt 4)
-Plotting(fig_dir, Simulation, S);
+Plotting(fig_dir, FilterResults, KF, TrueSystem, SimOpts);
 
-
-
-
-function S = update_struct(S, varargin)
+function KF = update_struct(KF, varargin)
     for i = 1:2:length(varargin)
-        S.(varargin{i}) = varargin{i+1};
+        name = varargin{i};
+        val = varargin{i+1};
+        if strcmp(name, 'sigma_w')
+            KF.Sigma_w = diag(val);
+        elseif strcmp(name, 'sigma_z')
+            KF.Sigma_z = diag(val);
+        elseif strcmp(name, 'sigma_u')
+            KF.Sigma_u = diag(val);
+        else
+            KF.(name) = val;
+        end
     end
 end
