@@ -26,8 +26,8 @@ function logL = logL_IEKF(KF, TrueSystem, SimOpts)
         end
 
         % Get initial measurements
-        [u_meas, TrueSystem, SimOpts] = get_u(TrueSystem, SimOpts);
-        [z_meas, TrueSystem, SimOpts] = get_z(TrueSystem, SimOpts);
+        [u_meas, TrueSystem, SimOpts] = meas_u(TrueSystem, SimOpts);
+        [z_meas, TrueSystem, SimOpts] = meas_z(TrueSystem, SimOpts);
 
         logL = 0;
         N_steps = SimOpts.t_end/KF.Delta_t;
@@ -39,8 +39,8 @@ function logL = logL_IEKF(KF, TrueSystem, SimOpts)
             SimOpts.t = t_prev + KF.Delta_t;
             SimOpts.t_prev = t_prev;
 
-            [u_meas, TrueSystem, SimOpts] = get_u(TrueSystem, SimOpts);
-            [z_meas, TrueSystem, SimOpts] = get_z(TrueSystem, SimOpts);
+            [u_meas, TrueSystem, SimOpts] = meas_u(TrueSystem, SimOpts);
+            [z_meas, TrueSystem, SimOpts] = meas_z(TrueSystem, SimOpts);
 
             % Call step filter to propagate and update
             [mu_x_next, Sigma2_x_next, mu_x_pred, Sigma2_x_pred] = IEKF_step(...

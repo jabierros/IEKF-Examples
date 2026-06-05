@@ -21,8 +21,8 @@ function FilterResults = IEKF(KF, TrueSystem, SimOpts, datalogging_string)
     end
     
     % Initial epoch (t=0)
-    [u_meas, TrueSystem, SimOpts] = get_u(TrueSystem, SimOpts); 
-    [z_meas, TrueSystem, SimOpts] = get_z(TrueSystem, SimOpts);
+    [u_meas, TrueSystem, SimOpts] = meas_u(TrueSystem, SimOpts); 
+    [z_meas, TrueSystem, SimOpts] = meas_z(TrueSystem, SimOpts);
     
     % Log initial epoch
     S_temp = struct();
@@ -47,8 +47,8 @@ function FilterResults = IEKF(KF, TrueSystem, SimOpts, datalogging_string)
         SimOpts.t_prev = t_prev;
         
         % Read input and measurement at t (epoch k+1)
-        [u_meas, TrueSystem, SimOpts] = get_u(TrueSystem, SimOpts);
-        [z_meas, TrueSystem, SimOpts] = get_z(TrueSystem, SimOpts);
+        [u_meas, TrueSystem, SimOpts] = meas_u(TrueSystem, SimOpts);
+        [z_meas, TrueSystem, SimOpts] = meas_z(TrueSystem, SimOpts);
         
         % Run flat step
         [mu_x, Sigma2_x] = IEKF_step(...

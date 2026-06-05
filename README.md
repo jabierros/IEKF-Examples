@@ -13,7 +13,7 @@ This repository contains a generalized **MATLAB** implementation of the Informat
   * `Plotting.m` / `unpack_simulation.m`: Log analysis and visualization.
   * `logL_IEKF.m`: Negative log-likelihood and joint energy computation.
 * **`LibIEKF/Template/`**: Generic templates for the simulator interface:
-  * `get_u.m` / `get_z.m` / `get_x_true.m`: Integrate continuous equations using `ode45` and generate sensor/input measurements contaminated with noise.
+  * `meas_u.m` / `meas_z.m` / `get_x_true.m`: Integrate continuous equations using `ode45` and generate sensor/input measurements contaminated with noise.
 * **`Double_Pendulum/`**: A 2-Degree-of-Freedom (MDOF) double pendulum example.
 * **`Mass_Spring_Damper/`**: A 1-Degree-of-Freedom (1D) mass-spring-damper example.
 
@@ -68,12 +68,32 @@ FilterResults = IEKS(FilterResults, KF, SimOpts);
 
 ### Parameter Tuning via MLE
 To tune filter noise parameters (like process noise std `sigma_w`), compute the prediction negative log-likelihood or smoother joint energy and optimize using `fminsearch`:
+
+**Example 1: Optimizing Process Noise `sigma_w`**
 ```matlab
 % Set up initial noise parameters
 theta = [sigma_w];
 
 % Define anonymous objective function
 fun = @(theta) logL_IEKF(update_struct(KF, 'sigma_w', theta), TrueSystem, SimOpts);
+
+% Run optimization
+options = optimset('PlotFcns', @optimplotfval);
+theta = fminsearch(fun, theta, options);
+```
+
+**Example 2: Optimizing a Physical Parameter along with Input & Sensor Noise**
+To optimize a physical parameter (e.g. `param(1)`) along with input and sensor noise standard deviations (`sigma_u` and `sigma_z`):
+```matlab
+% Set up initial guess: [physical_parameter; sigma_u; sigma_z]
+theta = [KF.param(1); diag(KF.Sigma_u); diag(KF.Sigma_z)];
+
+% Define anonymous objective function updating the physical parameter and the noise factor matrices
+fun = @(theta) logL_IEKF(update_struct(KF, ...
+    'param', [theta(1); KF.param(2:end)], ...
+    'sigma_u', theta(2), ...
+    'sigma_z', theta(3)), ...
+    TrueSystem, SimOpts);
 
 % Run optimization
 options = optimset('PlotFcns', @optimplotfval);

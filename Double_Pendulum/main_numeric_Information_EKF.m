@@ -123,8 +123,8 @@ FilterResults = IEKS(FilterResults, KF, SimOpts);
 
 %% Observability
 % Linear observability near the end of the simulation
-[u_meas_tmp, TrueSystem, SimOpts] = get_u(TrueSystem, SimOpts); 
-[z_meas_tmp, TrueSystem, SimOpts] = get_z(TrueSystem, SimOpts);
+[u_meas_tmp, TrueSystem, SimOpts] = meas_u(TrueSystem, SimOpts); 
+[z_meas_tmp, TrueSystem, SimOpts] = meas_z(TrueSystem, SimOpts);
 f_x_val=f_x_(FilterResults.data.mu_x{end}, u_meas_tmp, SimOpts.t, KF.param, KF.Delta_t);
 h_x_val=h_x_(FilterResults.data.mu_x{end}, u_meas_tmp, SimOpts.t, KF.param);
  

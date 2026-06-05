@@ -10,13 +10,13 @@ This manual explains how to write new filter/smoother applications using the **I
 
 ### Required Template Functions
 Every system directory (e.g., `Double_Pendulum`) uses the following interface functions located under `LibIEKF/Template` to supply inputs and measurements:
-1. **`get_u.m`**: Fetches or generates the command input `u_meas`.
+1. **`meas_u.m`**: Fetches or generates the command input `u_meas`.
    ```matlab
-   function [u_meas, TrueSystem, SimOpts] = get_u(TrueSystem, SimOpts)
+   function [u_meas, TrueSystem, SimOpts] = meas_u(TrueSystem, SimOpts)
    ```
-2. **`get_z.m`**: Fetches or generates the measurement vector `z_meas`.
+2. **`meas_z.m`**: Fetches or generates the measurement vector `z_meas`.
    ```matlab
-   function [z_meas, TrueSystem, SimOpts] = get_z(TrueSystem, SimOpts)
+   function [z_meas, TrueSystem, SimOpts] = meas_z(TrueSystem, SimOpts)
    ```
 3. **`get_x_true.m`**: Integrates continuous physics equations using the true process model (`dstate_true_.m`) to generate the true physical trajectory `x_true`.
    ```matlab
@@ -154,18 +154,35 @@ plot(t_series, mu_x_sm_series(:,1), 'r:', 'DisplayName', 'Smoother');
 legend();
 ```
 
----
-
 ## 4. Parameter Estimation via Log-Likelihood
 
 To optimize parameters (like noise standard deviations or model coefficients) using maximum likelihood estimation, pass updated structures to `logL_IEKF`:
 
+**Example 1: Optimizing Process Noise `sigma_w`**
 ```matlab
 % Set up optimization variables (e.g. optimizing process noise sigma_w)
 theta = [sigma_w];
 
 % Anonymous objective function that updates the struct and computes logL
 obj_fun = @(theta) logL_IEKF(update_struct(KF, 'sigma_w', theta), TrueSystem, SimOpts);
+
+% Optimize
+options = optimset('PlotFcns', @optimplotfval);
+optimal_sigma = fminsearch(obj_fun, theta, options);
+```
+
+**Example 2: Optimizing a Physical Parameter along with Input & Sensor Noise**
+To optimize a physical parameter (e.g. `param(1)`) along with input and sensor noise standard deviations (`sigma_u` and `sigma_z`):
+```matlab
+% Set up initial guess: [physical_parameter; sigma_u; sigma_z]
+theta = [KF.param(1); diag(KF.Sigma_u); diag(KF.Sigma_z)];
+
+% Define anonymous objective function updating the physical parameter and the noise factor matrices
+obj_fun = @(theta) logL_IEKF(update_struct(KF, ...
+    'param', [theta(1); KF.param(2:end)], ...
+    'sigma_u', theta(2), ...
+    'sigma_z', theta(3)), ...
+    TrueSystem, SimOpts);
 
 % Optimize
 options = optimset('PlotFcns', @optimplotfval);

@@ -1,7 +1,7 @@
-function [z_meas, TrueSystem, SimOpts] = get_z(TrueSystem, SimOpts)
-% GET_Z Simulates sensor measurement with noise.
+function [z_meas, TrueSystem, SimOpts] = meas_z(TrueSystem, SimOpts)
+% MEAS_Z Simulates sensor measurement with noise.
 %
-% [z_meas, TrueSystem, SimOpts] = get_z(TrueSystem, SimOpts)
+% [z_meas, TrueSystem, SimOpts] = meas_z(TrueSystem, SimOpts)
 
     [x_true, TrueSystem, SimOpts] = get_x_true(TrueSystem, SimOpts);
     u_true = u_true_func_(SimOpts.t);
