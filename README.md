@@ -1,16 +1,89 @@
 # IEKF Examples
 
-This is an example of a, pretty general, **MATLAB** implemementation of the Information Extended Kalman Filter.
-Maximum Likelihood Estimation of filter parameters is considered.
+This repository contains a generalized **MATLAB** implementation of the Information Extended Kalman Filter (IEKF), Information Extended Kalman Smoother (IEKS), and Iterated IEKS (IIEKS). It includes Maximum Likelihood Estimation (MLE) for optimizing filter parameters.
 
-Real world data is generated algorithmically. To that end an "actual system" state is simulated in parallel with the IEKF. From this "actual" state, "actual" measurements (noise free)  are obtained. These, in turn, are contaminated with noise to generate the so-called "meassured" inputs and sensors. Running the simulation of the real system in parallel with the IEKF allows to use the filter output as a feedback for control of the system. 
+---
 
-The code is generic enough to be applied to general nonlinear process and sensor equations
+## 1. Project Directory Structure
 
-The library directory is `LibIEKF`. Copy somewhere in your coputer an add the directory to the **MATLAB** path. 
-Then you can run any of the examples. To that end you first run `main_symbolic_EKF.m` and then `main_numeric_Information_EKF.m`.
+* **`LibIEKF/`**: Contains the core filter and smoother pass managers:
+  * `IEKF.m` / `IEKF_step.m`: The forward pass and individual epoch filter updates.
+  * `IEKS.m` / `IEKS_step.m`: The backward pass and individual smoother updates.
+  * `IIEKS.m`: Iterated smoothing.
+  * `Plotting.m` / `unpack_simulation.m`: Log analysis and visualization.
+  * `logL_IEKF.m`: Negative log-likelihood and joint energy computation.
+* **`LibIEKF/Template/`**: Generic templates for the simulator interface:
+  * `get_u.m` / `get_z.m` / `get_x_true.m`: Integrate continuous equations using `ode45` and generate sensor/input measurements contaminated with noise.
+* **`Double_Pendulum/`**: A 2-Degree-of-Freedom (MDOF) double pendulum example.
+* **`Mass_Spring_Damper/`**: A 1-Degree-of-Freedom (1D) mass-spring-damper example.
 
-## Globals
+---
+
+## 2. Decoupled Struct-Based Architecture
+
+Rather than relying on global variables, `LibIEKF` separates system parameters, simulation options, and physical state representations into three structures:
+
+1. **`KF` (Filter Settings)**:
+   * `Delta_t`: Filter time-step.
+   * `param`: Model parameters vector passed to analytical functions.
+   * `mu_x_0` / `sigma_x_0`: Initial filter state mean and standard deviation.
+   * `Sigma_w` / `Sigma_v` / `Sigma_u` / `Sigma_z`: Cholesky noise covariance factors.
+2. **`TrueSystem` (Truth Simulation)**:
+   * `param_true`: True physical system parameters.
+   * `x_true_0`: Starting physical state vector.
+   * `sigma_u_true` / `sigma_z_true`: Noise levels of inputs and sensors.
+3. **`SimOpts` (Simulation Options)**:
+   * `t_0` / `t_end`: Start and end times.
+   * `t` / `t_prev`: Current and previous time epochs.
+
+---
+
+## 3. How to Run
+
+Before running the examples, ensure that the library and template folders are added to your MATLAB path:
+```matlab
+addpath('LibIEKF');
+addpath('LibIEKF/Template');
+```
+
+For either example folder:
+1. **Regenerate Equations**: Run `main_symbolic_EKF.m` inside the example directory. This derives and exports analytical transition, measurement, and Jacobian functions ending with trailing underscores (`f_`, `h_`, `f_x_`, etc.) to prevent namespace conflicts.
+2. **Run Simulation & Filter**: Run `main_numeric_Information_EKF.m` to simulate the true trajectory, execute the filter and smoother passes, and perform parameter identification via MLE.
+
+---
+
+## 4. Typical Invocation & Log-Likelihood Optimization
+
+### Filter & Smoother Passes
+```matlab
+% Staged datalogging keys
+datalogging_string={'t';'x_true';'mu_x';'Sigma2_x';'u_true';'u_meas';'z_true';'z_meas';'sigma_x'};
+
+% Run forward IEKF pass
+FilterResults = IEKF(KF, TrueSystem, SimOpts, datalogging_string);
+
+% Run backward IEKS smoother pass
+FilterResults = IEKS(FilterResults, KF, SimOpts);
+```
+
+### Parameter Tuning via MLE
+To tune filter noise parameters (like process noise std `sigma_w`), compute the prediction negative log-likelihood or smoother joint energy and optimize using `fminsearch`:
+```matlab
+% Set up initial noise parameters
+theta = [sigma_w];
+
+% Define anonymous objective function
+fun = @(theta) logL_IEKF(update_struct(KF, 'sigma_w', theta), TrueSystem, SimOpts);
+
+% Run optimization
+options = optimset('PlotFcns', @optimplotfval);
+theta = fminsearch(fun, theta, options);
+```
+
+---
+*The content below corresponds to the older version (`LibIEKF_0`) of the library, which relied on global variables:*
+
+## [Old Version] Globals
 Extensive use of global variables is made on purpose, just to keep the code as simple as possible.
 
 * `global t t_0 t_end Delta_t`. time, initial time, final time and time step length (they are same for filter and simulation).
@@ -19,7 +92,7 @@ Extensive use of global variables is made on purpose, just to keep the code as s
 * `global sigma_u_actual sigma_z_actual x_actual x_actual_0 u_actual_func seed`.  Actual system measurement covariance of input and sensor (make `sigma_u_actual=zero(n_u,n_u)` if input isn't noisy), actual system state, actual system initial state. `u_actual_func` is a function handle `u_actual_func = @(t) (...)` to a function defining the actual system input as a function of time. Other global variables in this epigraph (actual system variables) can be used to implement the function. `seed` actual system random generator seed used to generate measurements of input and sensors. As the input is generated alongside the filter, parameter tuning requires repeatable random measurement sequences, and to that end seed is used to restart the random number generator at each (`t_0:Delta_t:t_end`) invocation of the filter.
 * `global param` these are the model and sensor equation parameters (coincident with those defined in `main_symbolic_EKF.m`)
 
-## Typical invocation
+## [Old Version] Typical invocation
 ### Filter alone
 ```
 t_0=...;
@@ -64,10 +137,10 @@ rng(seed); u_meas=get_u(); z_meas=get_z();
 for k=1:t_end/Delta_t
     % filter
     IEKF(sigma_discr, sigma_z, sigma_u,sigma_w_x,sigma_v_x);
-    
+
     % Datalog k+1
     datalogging(fid, datalogging_string)
-    
+
 end
 
 fclose(fid);
@@ -113,7 +186,6 @@ rank(OB)
 ### Determine -LogLikelihood of the filter prediction series.
 ```
 logL_IEKF(sigma_discr,sigma_z,sigma_u,sigma_w_x,sigma_v_x,mu_x_0,sigma_x_0)
-
 ```
 
 ### Minimize -LogLikelihood to identify filter parameters in `theta_` (excluded filter initial state)
@@ -124,7 +196,7 @@ fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),sigma_w_x,sigma_v_x,th
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_,options);
 
-% untangel parameters
+% untangle parameters
 sigma_discr=theta_(1:2)
 sigma_z=theta_(3)
 sigma_u=theta_(4)
@@ -139,11 +211,10 @@ fun = @(theta_) logL_IEKF(theta_(1:2),theta_(3),theta_(4),sigma_w_x,sigma_v_x,th
 options = optimset('PlotFcns',@optimplotfval);
 theta_ = fminsearch(fun, theta_,options);
 
-% untangle the parameters
+% untangle parameters
 sigma_discr=theta_(1:2)
 sigma_z=theta_(3)
 sigma_u=theta_(4)
 mu_x_0=theta_(5:6)
 sigma_x_0=theta_(7:8)
-
 ```

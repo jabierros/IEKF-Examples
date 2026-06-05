@@ -6,21 +6,21 @@ This manual explains how to write new filter/smoother applications using the **I
 
 ## 1. Library Architecture & Requirements
 
-`LibIEKF` uses an in-memory, struct-based architecture where all filter states, covariance matrices, parameters, and time steps are managed inside a single configuration structure `S`.
+`LibIEKF` uses an in-memory, struct-based architecture where parameters, state representations, and simulation options are separated into three structures: `KF`, `TrueSystem`, and `SimOpts`.
 
 ### Required Template Functions
-Every system directory (e.g., `Double_Pendulum`) must implement the following three interface functions to supply inputs and measurements:
-1. **`get_u.m`**: Fetches or generates the command input `u_meas` (and optionally updates the true system state if doing online simulation).
+Every system directory (e.g., `Double_Pendulum`) uses the following interface functions located under `LibIEKF/Template` to supply inputs and measurements:
+1. **`get_u.m`**: Fetches or generates the command input `u_meas`.
    ```matlab
-   function [u_meas, S] = get_u(S)
+   function [u_meas, TrueSystem, SimOpts] = get_u(TrueSystem, SimOpts)
    ```
 2. **`get_z.m`**: Fetches or generates the measurement vector `z_meas`.
    ```matlab
-   function [z_meas, S] = get_z(S)
+   function [z_meas, TrueSystem, SimOpts] = get_z(TrueSystem, SimOpts)
    ```
-3. **`get_x_true.m`**: Integrates continuous physics equations using the true process model (`dstate_true.m`) to generate the true physical trajectory `x_true`.
+3. **`get_x_true.m`**: Integrates continuous physics equations using the true process model (`dstate_true_.m`) to generate the true physical trajectory `x_true`.
    ```matlab
-   function S = get_x_true(S)
+   function [x_true, TrueSystem, SimOpts] = get_x_true(TrueSystem, SimOpts)
    ```
 
 ---
@@ -35,7 +35,8 @@ Use `syms` to declare coordinates, velocities, time, and physical parameters:
 syms t theta dtheta ddtheta l m g Delta_t real
 x_ = [theta; dtheta];       % Symbolic state vector
 u_ = sym(zeros(0,1));       % Symbolic input vector (if none, empty)
-param = [m; l; g; Delta_t]; % System parameter vector
+param = [m; l; g];          % System parameter vector (excludes Delta_t)
+param_true = param;
 ```
 
 ### Step 2: Formulate System Dynamics
@@ -66,20 +67,26 @@ dstate_x = jacobian(dstate, x_);
 ```
 
 ### Step 5: Export Functions
-Save the derived models as MATLAB files. Keep filter models (`f`, `h`, `dstate`) separate from the truth models (`dstate_true`, `h_true`) for generality:
+Save derived models with trailing underscores (`_`) to prevent name shadowing. Keep filter models separate from truth models:
 ```matlab
-matlabFunction(f,        'file', 'f',           'vars', {x_, u_, t, param});
-matlabFunction(f_x,      'file', 'f_x',         'vars', {x_, u_, t, param});
-matlabFunction(f_u,      'file', 'f_u',         'vars', {x_, u_, t, param});
-matlabFunction(h,        'file', 'h',           'vars', {x_, u_, t, param});
-matlabFunction(h_x,      'file', 'h_x',         'vars', {x_, u_, t, param});
-matlabFunction(h_u,      'file', 'h_u',         'vars', {x_, u_, t, param});
-matlabFunction(dstate,   'file', 'dstate',      'vars', {x_, u_, t, param});
-matlabFunction(dstate_x, 'file', 'dstate_x',    'vars', {x_, u_, t, param});
+matlabFunction(f,        'file', 'f_',           'vars', {x_, u_, t, param, Delta_t});
+matlabFunction(f_x,      'file', 'f_x_',         'vars', {x_, u_, t, param, Delta_t});
+matlabFunction(f_u,      'file', 'f_u_',         'vars', {x_, u_, t, param, Delta_t});
+matlabFunction(h,        'file', 'h_',           'vars', {x_, u_, t, param});
+matlabFunction(h_x,      'file', 'h_x_',         'vars', {x_, u_, t, param});
+matlabFunction(h_u,      'file', 'h_u_',         'vars', {x_, u_, t, param});
+matlabFunction(dstate,   'file', 'dstate_',      'vars', {x_, u_, t, param});
+matlabFunction(dstate_x, 'file', 'dstate_x_',    'vars', {x_, u_, t, param});
 
-% Separate true representations for truth simulation (can use different variables/parameters)
-matlabFunction(h_true,      'file', 'h_true',      'vars', {x_true, u_true, t, param_true});
-matlabFunction(dstate_true, 'file', 'dstate_true', 'vars', {x_true, u_true, t, param_true});
+% Separate true representations for truth simulation (with symbolic variables u_true and x_true)
+x_true = x_;
+syms u_true real
+dstate_true = subs(dstate, u_, u_true);
+h_true = subs(h, u_, u_true);
+
+matlabFunction(h_true,      'file', 'h_true_',      'vars', {x_true, u_true, t, param_true});
+matlabFunction(dstate_true, 'file', 'dstate_true_', 'vars', {x_true, u_true, t, param_true});
+matlabFunction(sym(0),      'file', 'u_true_func_', 'vars', {t});
 ```
 
 ---
@@ -88,47 +95,56 @@ matlabFunction(dstate_true, 'file', 'dstate_true', 'vars', {x_true, u_true, t, p
 
 The numeric script initializes parameters, configures noise standard deviations, executes the filter/smoother passes, and handles parameter estimation.
 
-### Step 1: Initialize System Struct `S`
-Define physical parameters, time steps, initial state estimates, and noise standard deviations:
+### Step 1: Initialize Structs
+Define physical parameters, time steps, initial state estimates, and noise standard deviations in three decoupled structs:
 ```matlab
-S.param = [1.0; 0.5; 9.81; 0.001]; % m, l, g, Delta_t
-S.param_true = S.param;             % Parameter truth representation
-S.Delta_t = 0.001;
-S.t_end = 2.0;
+% 1. Simulation Options
+SimOpts = struct();
+SimOpts.t_0 = 0.0;
+SimOpts.t_end = 2.0;
+SimOpts.t = 0.0;
+SimOpts.t_prev = 0.0;
 
-% Initial conditions
-S.t_0 = 0.0;
-S.x_true_0 = [0.1; 0.0];            % True starting physical state
-S.mu_x_0 = [0.15; 0.0];             % Filter starting state estimate
-S.sigma_x_0 = [0.01; 0.01];         % Filter initial standard deviations
-S.Sigma2_x_0 = diag(S.sigma_x_0.^2);
+% 2. Filter Configuration
+KF = struct();
+KF.Delta_t = 0.001;
+KF.param = [1.0; 0.5; 9.81];        % m, l, g
+KF.mu_x_0 = [0.15; 0.0];             % Filter starting state estimate
+KF.sigma_x_0 = [0.01; 0.01];         % Filter initial standard deviations
+KF.Sigma_w = diag([0.001; 0.001]);   % Process noise Cholesky matrix
+KF.Sigma_v = diag([0.005; 0.005]);   % Sensor process-coupling Cholesky matrix
+KF.Sigma_u = diag([]);               % Input noise Cholesky matrix
+KF.Sigma_z = diag([0.01; 0.02]);     % Sensor noise Cholesky matrix
 
-% Noise Standard Deviations (can be scalars or vectors)
-S.sigma_w_x = [0.001; 0.001];       % Process noise std.
-S.sigma_u = [];                     % Input noise std.
-S.sigma_z = [0.01; 0.02];           % Sensor noise std.
-S.sigma_v_x = [0.005; 0.005];       % Sensor process-coupling noise std.
+% 3. True System configuration
+TrueSystem = struct();
+TrueSystem.param_true = KF.param;    % True parameters
+TrueSystem.x_true_0 = [0.1; 0.0];    % True starting state
+TrueSystem.x_true = [0.1; 0.0];
+TrueSystem.x_true_prev = [0.1; 0.0];
+TrueSystem.sigma_u_true = [];        % True input noise level
+TrueSystem.sigma_z_true = [0.01; 0.02]; % True sensor noise level
 ```
 
 ### Step 2: Configure Logging & Run
-Specify which fields should be saved to history in `datalogging_string`, then execute the forward pass and smoothers directly:
+Specify which fields should be saved to history in `datalogging_string`, then execute the forward pass and smoothers:
 ```matlab
 datalogging_string = {'t'; 'x_true'; 'mu_x'; 'Sigma2_x'; 'u_meas'; 'z_meas'; 'sigma_x'};
 
 % 1. Forward Filter Pass
-Simulation = IEKF(S, datalogging_string);
+FilterResults = IEKF(KF, TrueSystem, SimOpts, datalogging_string);
 
 % 2. Backward Smoother Pass (IEKS)
-Simulation = IEKS(Simulation, S);
+FilterResults = IEKS(FilterResults, KF, SimOpts);
 
 % 3. Iterated Backward Smoother Pass (IIEKS) - 4 iterations
-% Simulation = IIEKS(Simulation, S, 4);
+% FilterResults = IIEKS(FilterResults, KF, SimOpts, 4);
 ```
 
 ### Step 3: Unpack & Plot
-Unpack the `Simulation` struct arrays to standard vectors/matrices for graphing:
+Unpack the `FilterResults` struct arrays to standard vectors/matrices for graphing:
 ```matlab
-unpack_simulation(Simulation);
+unpack_simulation(FilterResults);
 
 % Plotted variables are suffix-expanded to arrays (e.g. mu_x_series, x_true_series)
 plot(t_series, x_true_series(:,1), 'k-', 'DisplayName', 'True');
@@ -142,23 +158,16 @@ legend();
 
 ## 4. Parameter Estimation via Log-Likelihood
 
-To optimize parameters (like noise standard deviations or model coefficients) using maximum likelihood estimation, define the parameter configuration inside the struct `S` and pass it to `logL_IEKF`.
+To optimize parameters (like noise standard deviations or model coefficients) using maximum likelihood estimation, pass updated structures to `logL_IEKF`:
 
-### Configure Smoother Type in Likelihood
-You can choose the state estimation trajectory used to compute the residuals inside `logL_IEKF`:
-* **`S.smoother_in_likelihood = 'none'`**: Evaluates likelihood using the forward filter's predictions (standard prediction error).
-* **`S.smoother_in_likelihood = 'IEKS'`**: Evaluates the joint energy function of the smoothed trajectory.
-* **`S.smoother_in_likelihood = 'IIEKS'`**: Evaluates the joint energy function of the iterated smoothed trajectory.
-
-### Run Optimization
 ```matlab
-% Set up optimization variables (e.g. optimizing process noise sigma_w_x)
-S.smoother_in_likelihood = 'none';
+% Set up optimization variables (e.g. optimizing process noise sigma_w)
+theta = [sigma_w];
 
 % Anonymous objective function that updates the struct and computes logL
-obj_fun = @(theta) logL_IEKF(update_struct(S, 'sigma_w_x', theta));
+obj_fun = @(theta) logL_IEKF(update_struct(KF, 'sigma_w', theta), TrueSystem, SimOpts);
 
 % Optimize
-initial_guess = [0.01; 0.01];
-optimal_sigma = fminsearch(obj_fun, initial_guess);
+options = optimset('PlotFcns', @optimplotfval);
+optimal_sigma = fminsearch(obj_fun, theta, options);
 ```
